@@ -1,0 +1,437 @@
+[
+    {
+        "entry_time": "2026-07-14 11:49:05",
+        "exit_time": "2026-07-14 11:49:12",
+        "symbol": "C-BTC-62600-140726",
+        "option_type": "CALL",
+        "entry_spot": 62651.17078573,
+        "exit_spot": 62647.82953615,
+        "entry_premium": 207.61760745,
+        "exit_premium": 207.61760745,
+        "pnl_points": 0.0,
+        "pnl_usd": 0.0,
+        "fees_usd": 0.12529900032188002,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-14 11:49:20",
+        "exit_time": "2026-07-14 11:49:27",
+        "symbol": "C-BTC-62600-140726",
+        "option_type": "CALL",
+        "entry_spot": 62657.91755637,
+        "exit_spot": 62658.0163926,
+        "entry_premium": 204.16618758,
+        "exit_premium": 210.85133788,
+        "pnl_points": 6.685150299999975,
+        "pnl_usd": 0.06685150299999976,
+        "fees_usd": 0.12531593394897,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-15 00:07:04",
+        "exit_time": "2026-07-15 00:07:55",
+        "symbol": "C-BTC-64600-150726",
+        "option_type": "CALL",
+        "entry_spot": 64539.20335238,
+        "exit_spot": 64529.19075445,
+        "entry_premium": 358.38796264,
+        "exit_premium": 360.3689667,
+        "pnl_points": 1.9810040599999752,
+        "pnl_usd": 0.019810040599999752,
+        "fees_usd": 0.12906839410683002,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-15 00:08:34",
+        "exit_time": "2026-07-15 00:11:37",
+        "symbol": "C-BTC-64600-150726",
+        "option_type": "CALL",
+        "entry_spot": 64553.06013849,
+        "exit_spot": 64515.8931009,
+        "entry_premium": 353.21645032,
+        "exit_premium": 338.69013223,
+        "pnl_points": -14.526318089999961,
+        "pnl_usd": -0.14526318089999962,
+        "fees_usd": 0.12906895323939,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-16 00:03:27",
+        "exit_time": "2026-07-16 00:03:33",
+        "symbol": "P-BTC-65000-160726",
+        "option_type": "PUT",
+        "entry_spot": 65073.73515302,
+        "exit_spot": 65069.84037556,
+        "entry_premium": 252.972499,
+        "exit_premium": 252.972499,
+        "pnl_points": 0.0,
+        "pnl_usd": 0.0,
+        "fees_usd": 0.13014357552858002,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-16 00:03:40",
+        "exit_time": "2026-07-16 00:03:48",
+        "symbol": "P-BTC-65000-160726",
+        "option_type": "PUT",
+        "entry_spot": 65070.35995719,
+        "exit_spot": 65069.16450353,
+        "entry_premium": 257.38431334,
+        "exit_premium": 257.50661963,
+        "pnl_points": 0.12230628999998316,
+        "pnl_usd": 0.0012230628999998318,
+        "fees_usd": 0.13013952446072002,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-17 13:30:10",
+        "exit_time": "2026-07-17 13:38:14",
+        "direction": "PUT",
+        "entry_spot": 62791.27785581,
+        "exit_spot": 62849.17943439,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-62800-170726",
+                "entry_premium": 154.32149787,
+                "exit_premium": 127.58636563,
+                "pnl_usd": -0.26735132240000004,
+                "fees_usd": 0.09866775222500002
+            },
+            "hedge": {
+                "symbol": "C-BTC-63200-170726",
+                "entry_premium": 37.74189188,
+                "exit_premium": 38.85265479,
+                "pnl_usd": 0.0033322887300000163,
+                "fees_usd": 0.008042427400350001
+            }
+        },
+        "total_pnl_usd": -0.26401903367,
+        "total_fees_usd": 0.10671017962535001,
+        "net_pnl_usd": -0.37072921329535,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-17 14:25:04",
+        "exit_time": "2026-07-17 14:25:12",
+        "direction": "PUT",
+        "entry_spot": 62855.51972862,
+        "exit_spot": 62840.33266197,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-62800-170726",
+                "entry_premium": 88.86646568,
+                "exit_premium": 88.86646568,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.06220652597600001
+            },
+            "hedge": {
+                "symbol": "C-BTC-63200-170726",
+                "entry_premium": 17.60678423,
+                "exit_premium": 17.60678423,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.0036974246883000003
+            }
+        },
+        "total_pnl_usd": 0.0,
+        "total_fees_usd": 0.0659039506643,
+        "net_pnl_usd": -0.0659039506643,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-17 14:25:20",
+        "exit_time": "2026-07-17 14:25:28",
+        "direction": "PUT",
+        "entry_spot": 62841.23076074,
+        "exit_spot": 62840.18036112,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-62800-170726",
+                "entry_premium": 87.76611666,
+                "exit_premium": 88.14819503,
+                "pnl_usd": 0.003820783700000021,
+                "fees_usd": 0.0615700090915
+            },
+            "hedge": {
+                "symbol": "C-BTC-63200-170726",
+                "entry_premium": 17.94197305,
+                "exit_premium": 17.67887507,
+                "pnl_usd": -0.0007892939400000039,
+                "fees_usd": 0.0037401890526000004
+            }
+        },
+        "total_pnl_usd": 0.003031489760000017,
+        "total_fees_usd": 0.0653101981441,
+        "net_pnl_usd": -0.062278708384099976,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-17 14:25:36",
+        "exit_time": "2026-07-17 14:25:44",
+        "direction": "PUT",
+        "entry_spot": 62839.27307325,
+        "exit_spot": 62839.63392035,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-62800-170726",
+                "entry_premium": 88.14819503,
+                "exit_premium": 87.79617316,
+                "pnl_usd": -0.003520218700000015,
+                "fees_usd": 0.0615805288665
+            },
+            "hedge": {
+                "symbol": "C-BTC-63200-170726",
+                "entry_premium": 17.67887507,
+                "exit_premium": 17.53629044,
+                "pnl_usd": -0.00042775389000000534,
+                "fees_usd": 0.00369759237855
+            }
+        },
+        "total_pnl_usd": -0.00394797259000002,
+        "total_fees_usd": 0.06527812124505,
+        "net_pnl_usd": -0.06922609383505002,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-17 14:30:13",
+        "exit_time": "2026-07-17 14:30:21",
+        "direction": "PUT",
+        "entry_spot": 62861.99248323,
+        "exit_spot": 62861.30931998,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-62800-170726",
+                "entry_premium": 79.14481016,
+                "exit_premium": 79.14481016,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.05540136711200001
+            },
+            "hedge": {
+                "symbol": "C-BTC-63200-170726",
+                "entry_premium": 19.80191104,
+                "exit_premium": 19.80191104,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.0041584013184
+            }
+        },
+        "total_pnl_usd": 0.0,
+        "total_fees_usd": 0.05955976843040001,
+        "net_pnl_usd": -0.05955976843040001,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-19 01:15:08",
+        "exit_time": "2026-07-19 01:15:15",
+        "direction": "CALL",
+        "entry_spot": 64500.04138235,
+        "exit_spot": 64503.04379663,
+        "legs": {
+            "major": {
+                "symbol": "C-BTC-64600-190726",
+                "entry_premium": 160.70904546,
+                "exit_premium": 160.70904546,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.112496331822
+            },
+            "hedge": {
+                "symbol": "P-BTC-64200-190726",
+                "entry_premium": 77.4994318,
+                "exit_premium": 77.4994318,
+                "pnl_usd": 0.0,
+                "fees_usd": 0.016274880678000002
+            }
+        },
+        "total_pnl_usd": 0.0,
+        "total_fees_usd": 0.1287712125,
+        "net_pnl_usd": -0.1287712125,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-20 02:30:10",
+        "exit_time": "2026-07-20 02:48:06",
+        "direction": "CALL",
+        "entry_spot": 64520.10895982,
+        "exit_spot": 64484.59818825,
+        "legs": {
+            "major": {
+                "symbol": "C-BTC-64600-200726",
+                "entry_premium": 296.28441671,
+                "exit_premium": 276.82036737,
+                "pnl_usd": -0.19464049340000034,
+                "fees_usd": 0.12900470714807
+            },
+            "hedge": {
+                "symbol": "P-BTC-64200-200726",
+                "entry_premium": 186.27824668,
+                "exit_premium": 197.85614962,
+                "pnl_usd": 0.03473370882,
+                "fees_usd": 0.038701412144421
+            }
+        },
+        "total_pnl_usd": -0.15990678458000035,
+        "total_fees_usd": 0.167706119292491,
+        "net_pnl_usd": -0.3276129038724913,
+        "exit_reason": "kijun_cross_exit"
+    },
+    {
+        "entry_time": "2026-07-21 03:06:08",
+        "exit_time": "2026-07-21 03:13:22",
+        "direction": "CALL",
+        "entry_spot": 65420.65312391,
+        "exit_spot": 65332.08743519,
+        "legs": {
+            "major": {
+                "symbol": "C-BTC-65400-210726",
+                "entry_premium": 274.0058181,
+                "exit_premium": 230.00236766,
+                "pnl_usd": -0.4400345043999999,
+                "fees_usd": 0.13075274055910002
+            },
+            "hedge": {
+                "symbol": "P-BTC-65000-210726",
+                "entry_premium": 101.80762545,
+                "exit_premium": 125.79259693,
+                "pnl_usd": 0.07195491443999999,
+                "fees_usd": 0.023898023349900002
+            }
+        },
+        "total_pnl_usd": -0.3680795899599999,
+        "total_fees_usd": 0.154650763909,
+        "net_pnl_usd": -0.5227303538689999,
+        "exit_reason": "stop_loss"
+    },
+    {
+        "entry_time": "2026-07-22 01:06:08",
+        "exit_time": "2026-07-22 01:30:56",
+        "direction": "CALL",
+        "entry_spot": 66411.620877,
+        "exit_spot": 66337.92873321,
+        "legs": {
+            "major": {
+                "symbol": "C-BTC-66400-220726",
+                "entry_premium": 316.19999358,
+                "exit_premium": 271.40667645,
+                "pnl_usd": -0.4479331712999999,
+                "fees_usd": 0.13274954961021002
+            },
+            "hedge": {
+                "symbol": "P-BTC-66000-220726",
+                "entry_premium": 122.08485994,
+                "exit_premium": 139.88424065,
+                "pnl_usd": 0.053398142130000034,
+                "fees_usd": 0.02750675556195
+            }
+        },
+        "total_pnl_usd": -0.39453502916999983,
+        "total_fees_usd": 0.16025630517216002,
+        "net_pnl_usd": -0.5547913343421599,
+        "exit_reason": "stop_loss"
+    },
+    {
+        "entry_time": "2026-07-26 13:33:21",
+        "exit_time": "2026-07-26 13:47:53",
+        "direction": "PUT",
+        "entry_spot": 64332.06170081,
+        "exit_spot": 64392.55698282,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-64400-260726",
+                "entry_premium": 99.97586486,
+                "exit_premium": 61.37048335,
+                "pnl_usd": -0.38605381510000003,
+                "fees_usd": 0.05647122187350001
+            },
+            "hedge": {
+                "symbol": "C-BTC-64800-260726",
+                "entry_premium": 2.58938482,
+                "exit_premium": 12.93663298,
+                "pnl_usd": 0.03104174448,
+                "fees_usd": 0.0016302318690000002
+            }
+        },
+        "total_pnl_usd": -0.35501207062,
+        "total_fees_usd": 0.05810145374250001,
+        "net_pnl_usd": -0.41311352436250004,
+        "exit_reason": "stop_loss"
+    },
+    {
+        "entry_time": "2026-07-28 07:57:09",
+        "exit_time": "2026-07-28 08:27:17",
+        "direction": "PUT",
+        "entry_spot": 63227.06177478,
+        "exit_spot": 63165.25264757,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-63200-280726",
+                "entry_premium": 242.3977772,
+                "exit_premium": 260.56428853,
+                "pnl_usd": 0.18166511329999993,
+                "fees_usd": 0.12639231442235
+            },
+            "hedge": {
+                "symbol": "C-BTC-63600-280726",
+                "entry_premium": 117.84451123,
+                "exit_premium": 93.58068327,
+                "pnl_usd": -0.07279148388000001,
+                "fees_usd": 0.0221996454225
+            }
+        },
+        "total_pnl_usd": 0.10887362941999992,
+        "total_fees_usd": 0.14859195984485,
+        "net_pnl_usd": -0.03971833042485007,
+        "exit_reason": "max_holding_time"
+    },
+    {
+        "entry_time": "2026-07-29 00:57:05",
+        "exit_time": "2026-07-29 01:00:17",
+        "direction": "PUT",
+        "entry_spot": 63720.29657935,
+        "exit_spot": 63828.71535916,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-63800-290726",
+                "entry_premium": 291.84437088,
+                "exit_premium": 237.34735537,
+                "pnl_usd": -0.5449701550999998,
+                "fees_usd": 0.12754901193851
+            },
+            "hedge": {
+                "symbol": "C-BTC-64200-290726",
+                "entry_premium": 92.94873429,
+                "exit_premium": 122.71456773,
+                "pnl_usd": 0.08929750031999999,
+                "fees_usd": 0.022644646712100005
+            }
+        },
+        "total_pnl_usd": -0.4556726547799998,
+        "total_fees_usd": 0.15019365865061002,
+        "net_pnl_usd": -0.6058663134306098,
+        "exit_reason": "stop_loss"
+    },
+    {
+        "entry_time": "2026-07-30 02:39:07",
+        "exit_time": "2026-07-30 02:40:23",
+        "direction": "PUT",
+        "entry_spot": 63291.20129616,
+        "exit_spot": 63358.49116023,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-63200-300726",
+                "entry_premium": 332.39716673,
+                "exit_premium": 278.68522041,
+                "pnl_usd": -0.5371194631999998,
+                "fees_usd": 0.12664969245639002
+            },
+            "hedge": {
+                "symbol": "C-BTC-63600-300726",
+                "entry_premium": 239.43468625,
+                "exit_premium": 285.30992573,
+                "pnl_usd": 0.13762571843999993,
+                "fees_usd": 0.037994907736916994
+            }
+        },
+        "total_pnl_usd": -0.3994937447599999,
+        "total_fees_usd": 0.164644600193307,
+        "net_pnl_usd": -0.5641383449533068,
+        "exit_reason": "stop_loss"
+    }
+]

@@ -1,0 +1,20 @@
+
+--- ERROR AT 2026-07-07 10:49:24.797692 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 335, in main
+    trade_manager.check_and_manage(all_tickers, btc_price, main.cached_iv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chandu/trade test-1/trades.py", line 130, in check_and_manage
+    is_call_side_open = pos.legs['sell_call'].status == "OPEN" or pos.legs['buy_call'].status == "OPEN"
+                        ~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'sell_call'
+
+--- ERROR AT 2026-07-07 10:49:27.400147 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 335, in main
+    trade_manager.check_and_manage(all_tickers, btc_price, main.cached_iv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chandu/trade test-1/trades.py", line 130, in check_and_manage
+    is_call_side_open = pos.legs['sell_call'].status == "OPEN" or pos.legs['buy_call'].status == "OPEN"
+                        ~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'sell_call'
