@@ -4,7 +4,7 @@ DELTA_API_SECRET = "iNp4jbFsXY6jWpSMxOE1KcdQHSbwBWVmaSiWVzFecQ0x44qwBujK1Dx4OnKW
 DELTA_BASE_URL = "https://api.india.delta.exchange"
 
 # Strategy Structure
-TRADE_QUANTITY = 5               # Number of contracts per leg (0.001 multiplier)
+TRADE_QUANTITY = 20               # Number of contracts per leg (0.001 multiplier)
 MAX_TRADES_PER_DAY = 1           # Enforce max trades per day
 
 # Strike Selection Settings (OTM targets)
@@ -27,7 +27,7 @@ MAX_SPREAD_PCT = 5.0             # Maximum option spread percentage (max slippag
 # Normal Exit Thresholds (applied on net premium collected)
 PROFIT_MIN_PCT = 0.30            # 30% melt (capture profits quick)
 PROFIT_MAX_PCT = 0.45            # 45% melt
-STOP_LOSS_PCT = 1.50             # 150% net loss stopping (breathing room)
+STOP_LOSS_PCT = 0.80             # 80% net loss stopping (optimized for small balance)
 
 # Leg Exit Thresholds (close losing side only)
 LEG_SHORT_EXPANSION_PCT = 0.25   # short option expanded >= 25%

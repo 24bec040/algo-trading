@@ -286,5 +286,17 @@
         "leg_exit_triggered": false,
         "exit_reason": "stop_loss",
         "fees_usd": 0.061041417101000015
+    },
+    {
+        "entry_time": "2026-08-01 05:52:14",
+        "exit_time": "2026-08-01 08:42:44",
+        "entry_spot": 62937.17826661,
+        "entry_iv": 0.3411084646034416,
+        "initial_premium": 59.87789769,
+        "pnl_points": 27.223281879999995,
+        "pnl_usd": 0.13611640939999997,
+        "leg_exit_triggered": false,
+        "exit_reason": "profit_max",
+        "fees_usd": 0.030486805384000004
     }
 ]

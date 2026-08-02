@@ -244,14 +244,57 @@ class IchimokuScalpBot:
         else:
             return "NEUTRAL"
 
+    def find_swing_levels(self, candles, left_window=10, right_window=5):
+        if not candles or len(candles) < (left_window + right_window + 1):
+            return []
+        candles_sorted = sorted(candles, key=lambda x: x.get('time', 0))
+        highs, lows = [], []
+        for c in candles_sorted:
+            try:
+                highs.append(float(c['high']))
+                lows.append(float(c['low']))
+            except:
+                pass
+        if not highs or not lows:
+            return []
+        levels = []
+        # Peaks: Resistance
+        for i in range(left_window, len(highs) - right_window):
+            val = highs[i]
+            is_peak = True
+            for j in range(i - left_window, i + right_window + 1):
+                if highs[j] > val:
+                    is_peak = False
+                    break
+            if is_peak and val not in [l['price'] for l in levels]:
+                levels.append({'price': val, 'type': 'RESISTANCE'})
+        # Troughs: Support
+        for i in range(left_window, len(lows) - right_window):
+            val = lows[i]
+            is_trough = True
+            for j in range(i - left_window, i + right_window + 1):
+                if lows[j] < val:
+                    is_trough = False
+                    break
+            if is_trough and val not in [l['price'] for l in levels]:
+                levels.append({'price': val, 'type': 'SUPPORT'})
+        return levels
+
     def get_all_timeframe_data(self):
-        # Fetch 4H candles to compute trend bias
+        # Fetch 4H candles to compute trend bias & S/R
         candles_4h = self.client.get_history(resolution="4h", limit=80)
         ichi_4h = self.calculate_ichimoku(candles_4h)
+        self.sr_levels_4h = self.find_swing_levels(candles_4h, left_window=8, right_window=4)
         
-        # Fetch 1H candles to compute trend bias
+        # Fetch 1H candles to compute trend bias & S/R
         candles_1h = self.client.get_history(resolution="1h", limit=80)
         ichi_1h = self.calculate_ichimoku(candles_1h)
+        self.sr_levels_1h = self.find_swing_levels(candles_1h, left_window=6, right_window=3)
+
+        # Fetch 15m candles to compute S/R
+        candles_15m = self.client.get_history(resolution="15m", limit=80)
+        ichi_15m = self.calculate_ichimoku(candles_15m)
+        self.sr_levels_15m = self.find_swing_levels(candles_15m, left_window=5, right_window=2)
         
         # Fetch 3m candles (or whatever configuration timeframe) for signal triggers
         candles_3m = self.client.get_history(resolution=config.TIMEFRAME, limit=80)
@@ -260,10 +303,88 @@ class IchimokuScalpBot:
         tfs = {
             '4h': ichi_4h,
             '1h': ichi_1h,
+            '15m': ichi_15m,
             '3m': ichi_3m
         }
         self.last_timeframe_data = tfs
         return tfs
+
+    def verify_sr_and_cloud_filters(self, signal, ichi_3m):
+        """
+        Filters the signal based on:
+        1. 3m cloud color direction (Up for CALL, Down for PUT).
+        2. Clean runway check or breakout validation against 4H/1H/15m Support/Resistance levels.
+        """
+        p_close = ichi_3m['prev_close']
+        p2_close = ichi_3m['prev2_close']
+        p_span_a = ichi_3m['prev_span_a']
+        p_span_b = ichi_3m['prev_span_b']
+
+        if p_span_a is None or p_span_b is None:
+            return False
+
+        # Gather all support and resistance coordinates
+        sr_levels = []
+        if hasattr(self, 'sr_levels_4h'): sr_levels.extend(self.sr_levels_4h)
+        if hasattr(self, 'sr_levels_1h'): sr_levels.extend(self.sr_levels_1h)
+        if hasattr(self, 'sr_levels_15m'): sr_levels.extend(self.sr_levels_15m)
+
+        # Minimum required runway distance in USD to prevent buying into visual barriers
+        RUNWAY_MIN_USD = 200.0
+
+        if signal == "BUY_CALL":
+            # 1. Cloud direction check: cloud must be upward (green)
+            if p_span_a < p_span_b:
+                self.add_log("[!] FILTERED: BUY_CALL cloud is DOWN (Span A < Span B).")
+                return False
+
+            # 2. Support & Resistance Filter
+            resistances = [l['price'] for l in sr_levels if l['type'] == 'RESISTANCE']
+            if resistances:
+                # Closest resistance sitting ABOVE current price
+                overhead_res = [r for r in resistances if r > p_close]
+                if overhead_res:
+                    closest_r = min(overhead_res)
+                    dist = closest_r - p_close
+                    if dist < RUNWAY_MIN_USD:
+                        # Check if candle just broke above it (breakout candidate)
+                        if p_close > closest_r and p2_close <= closest_r:
+                            self.add_log(f"[✔] BREAKOUT: Spot broke above Resistance at ${closest_r:.1f}.")
+                            return True
+                        else:
+                            self.add_log(f"[!] FILTERED: BUY_CALL near Resistance at ${closest_r:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
+                            return False
+                            
+            self.add_log("[✔] BUY_CALL passed all S/R & Cloud alignment checks.")
+            return True
+
+        elif signal == "BUY_PUT":
+            # 1. Cloud direction check: cloud must be downward (red)
+            if p_span_a > p_span_b:
+                self.add_log("[!] FILTERED: BUY_PUT cloud is UP (Span A > Span B).")
+                return False
+
+            # 2. Support & Resistance Filter
+            supports = [l['price'] for l in sr_levels if l['type'] == 'SUPPORT']
+            if supports:
+                # Closest support sitting BELOW current price
+                underfoot_sup = [s for s in supports if s < p_close]
+                if underfoot_sup:
+                    closest_s = max(underfoot_sup)
+                    dist = p_close - closest_s
+                    if dist < RUNWAY_MIN_USD:
+                        # Check if candle just broke below it (breakout candidate)
+                        if p_close < closest_s and p2_close >= closest_s:
+                            self.add_log(f"[✔] BREAKOUT: Spot broke below Support at ${closest_s:.1f}.")
+                            return True
+                        else:
+                            self.add_log(f"[!] FILTERED: BUY_PUT near Support at ${closest_s:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
+                            return False
+
+            self.add_log("[✔] BUY_PUT passed all S/R & Cloud alignment checks.")
+            return True
+
+        return False
 
     def evaluate_signal(self, timeframes_data):
         if not timeframes_data: return None
@@ -276,6 +397,8 @@ class IchimokuScalpBot:
             
         bias_4h = self.get_trend_bias(ichi_4h)
         bias_1h = self.get_trend_bias(ichi_1h)
+        
+        candidate_signal = None
         
         # If 4H and 1H trends are NOT aligned, do not trade!
         if bias_4h == "BULLISH" and bias_1h == "BULLISH":
@@ -294,14 +417,14 @@ class IchimokuScalpBot:
                 
                 # Cloud breakout
                 if p2_close <= prev_top_cloud and p_close > top_cloud:
-                    return "BUY_CALL"
+                    candidate_signal = "BUY_CALL"
                     
                 # Tenkan-Kijun crossover
                 t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
                 t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
-                if all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
+                if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
                     if t_prev <= k_prev and t_now > k_now and p_close > top_cloud:
-                        return "BUY_CALL"
+                        candidate_signal = "BUY_CALL"
                         
         elif bias_4h == "BEARISH" and bias_1h == "BEARISH":
             # Check bearish entry on 3m chart (using closed candles: index -2 vs -3)
@@ -319,15 +442,20 @@ class IchimokuScalpBot:
                 
                 # Cloud breakout
                 if p2_close >= prev_bottom_cloud and p_close < bottom_cloud:
-                    return "BUY_PUT"
+                    candidate_signal = "BUY_PUT"
                     
                 # Tenkan-Kijun crossover
                 t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
                 t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
-                if all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
+                if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
                     if t_prev >= k_prev and t_now < k_now and p_close < bottom_cloud:
-                        return "BUY_PUT"
+                        candidate_signal = "BUY_PUT"
 
+        # Apply S/R & Cloud direction filters if we found a breakout setup
+        if candidate_signal:
+            if self.verify_sr_and_cloud_filters(candidate_signal, ichi_3m):
+                return candidate_signal
+                
         return None
 
 
@@ -455,6 +583,15 @@ class IchimokuScalpBot:
         self.add_log(f" Payoff Profile                   : Asymmetric Directional ({direction})")
         self.add_log("=" * 65 + "\n")
 
+        # Automated Pre-Entry Delta Alignment Verification Checks
+        if direction == "CALL" and net_delta <= 0.0:
+            self.add_log(f"[!] ENTRY ABORTED: Combined Net Delta {net_delta:.5f} is not positive for a CALL breakout.")
+            return
+        if direction == "PUT" and net_delta >= 0.0:
+            self.add_log(f"[!] ENTRY ABORTED: Combined Net Delta {net_delta:.5f} is not negative for a PUT breakout.")
+            return
+
+        self.add_log("[✔] DIRECTIONS & GREEKS CHECKS PASSED: Proceeding with execution...")
         self.add_log(f"Placing market BUY order for Major Leg ({config.MAJOR_LEG_QUANTITY} of {major_symbol}) and Hedge Leg ({config.HEDGE_LEG_QUANTITY} of {hedge_symbol})...")
         
         # Place major leg order
@@ -632,6 +769,10 @@ def make_layout():
         Layout(name="left", ratio=1),
         Layout(name="right", ratio=1)
     )
+    layout["left"].split_column(
+        Layout(name="indicators", ratio=5),
+        Layout(name="sr_levels", ratio=4)
+    )
     return layout
 
 
@@ -683,7 +824,28 @@ def build_views(bot, layout):
         fmt_bias(bias_3m)
     )
 
-    layout["left"].update(Panel(indicators_table, style="blue"))
+    layout["left"]["indicators"].update(Panel(indicators_table, style="blue"))
+
+    sr_table = Table(title="DETECTED SWING SUPPORT & RESISTANCE LEVELS", expand=True)
+    sr_table.add_column("Timeframe", style="cyan")
+    sr_table.add_column("Support Levels (Lows)", style="green")
+    sr_table.add_column("Resistance Levels (Highs)", style="red")
+
+    def get_sr_str(levels, type_filter):
+        prices = [l['price'] for l in levels if l['type'] == type_filter]
+        if not prices: return "None"
+        prices = sorted(prices)
+        return ", ".join([f"${p:,.1f}" for p in prices[-3:]])
+
+    h4_levels = getattr(bot, 'sr_levels_4h', [])
+    h1_levels = getattr(bot, 'sr_levels_1h', [])
+    m15_levels = getattr(bot, 'sr_levels_15m', [])
+
+    sr_table.add_row("4H Chart", get_sr_str(h4_levels, 'SUPPORT'), get_sr_str(h4_levels, 'RESISTANCE'))
+    sr_table.add_row("1H Chart", get_sr_str(h1_levels, 'SUPPORT'), get_sr_str(h1_levels, 'RESISTANCE'))
+    sr_table.add_row("15m Chart", get_sr_str(m15_levels, 'SUPPORT'), get_sr_str(m15_levels, 'RESISTANCE'))
+
+    layout["left"]["sr_levels"].update(Panel(sr_table, style="blue"))
 
     # Right Column: Active Scalps & Stats
     right_column = Layout()

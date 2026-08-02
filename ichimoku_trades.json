@@ -433,5 +433,32 @@
         "total_fees_usd": 0.164644600193307,
         "net_pnl_usd": -0.5641383449533068,
         "exit_reason": "stop_loss"
+    },
+    {
+        "entry_time": "2026-08-01 01:12:11",
+        "exit_time": "2026-08-01 01:42:16",
+        "direction": "PUT",
+        "entry_spot": 62924.1612949,
+        "exit_spot": 62947.48170878,
+        "legs": {
+            "major": {
+                "symbol": "P-BTC-63000-010826",
+                "entry_premium": 204.7321238,
+                "exit_premium": 169.68892502,
+                "pnl_usd": -0.3504319878000001,
+                "fees_usd": 0.12231528505190001
+            },
+            "hedge": {
+                "symbol": "C-BTC-63400-010826",
+                "entry_premium": 47.60838372,
+                "exit_premium": 43.0562092,
+                "pnl_usd": -0.013656523560000005,
+                "fees_usd": 0.0095197822566
+            }
+        },
+        "total_pnl_usd": -0.36408851136000014,
+        "total_fees_usd": 0.1318350673085,
+        "net_pnl_usd": -0.4959235786685001,
+        "exit_reason": "max_holding_time"
     }
 ]
