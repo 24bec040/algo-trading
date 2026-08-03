@@ -56,6 +56,7 @@ class IchimokuPosition:
         self.direction = direction   # "CALL" or "PUT"
         self.entry_time = datetime.now(IST)
         self.exit_reason = None
+        self.breakeven_reached = False
 
     def to_dict(self):
         return {
@@ -63,7 +64,8 @@ class IchimokuPosition:
             'entry_spot': self.entry_spot,
             'direction': self.direction,
             'entry_time': self.entry_time.strftime("%Y-%m-%d %H:%M:%S") if isinstance(self.entry_time, datetime) else str(self.entry_time),
-            'exit_reason': self.exit_reason
+            'exit_reason': self.exit_reason,
+            'breakeven_reached': self.breakeven_reached
         }
 
     @classmethod
@@ -78,6 +80,7 @@ class IchimokuPosition:
             except:
                 pos.entry_time = entry_time_str
         pos.exit_reason = d.get('exit_reason')
+        pos.breakeven_reached = d.get('breakeven_reached', False)
         return pos
 
 
@@ -416,7 +419,7 @@ class IchimokuScalpBot:
                 prev_top_cloud = max(p2_span_a, p2_span_b)
                 
                 # Cloud breakout
-                if p2_close <= prev_top_cloud and p_close > top_cloud:
+                if p2_close <= prev_top_cloud and p_close > top_cloud and (ichi_3m['prev_kijun'] is None or p_close > ichi_3m['prev_kijun']):
                     candidate_signal = "BUY_CALL"
                     
                 # Tenkan-Kijun crossover
@@ -441,7 +444,7 @@ class IchimokuScalpBot:
                 prev_bottom_cloud = min(p2_span_a, p2_span_b)
                 
                 # Cloud breakout
-                if p2_close >= prev_bottom_cloud and p_close < bottom_cloud:
+                if p2_close >= prev_bottom_cloud and p_close < bottom_cloud and (ichi_3m['prev_kijun'] is None or p_close < ichi_3m['prev_kijun']):
                     candidate_signal = "BUY_PUT"
                     
                 # Tenkan-Kijun crossover
@@ -641,8 +644,24 @@ class IchimokuScalpBot:
                 # Fetch actual price from tickers if available
                 exit_prem = tickers_dict.get(leg.symbol, {}).get('mark_price', leg.current_premium)
                 if not res or 'result' not in res:
-                    self.add_log(f"[!] FAILED TO CLOSE {role} ({leg.symbol}): {res}. Will retry on next loop.")
-                else:
+                    self.add_log(f"[!] FAILED TO CLOSE {role} ({leg.symbol}) via market order: {res}. Trying limit order fallback...")
+                    try:
+                        ticker = tickers_dict.get(leg.symbol) or self.client.get_ticker(leg.symbol)
+                        if ticker:
+                            # Cross the spread downward to ensure prompt execution
+                            fallback_price = min(ticker.get('best_bid', 0), ticker.get('mark_price', 0)) - 3.0
+                            if fallback_price <= 0: fallback_price = max(0.1, leg.current_premium - 3.0)
+                            
+                            self.add_log(f"[*] Fallback: Placing limit order to exit {role} at price {fallback_price:.3f}...")
+                            res_limit = self.client.place_order(leg.symbol, "sell", size=leg.size, order_type="limit_order", price=fallback_price)
+                            if res_limit and 'result' in res_limit:
+                                self.add_log(f"[✔] Limit order fallback succeeded!")
+                                res = res_limit
+                                exit_prem = tickers_dict.get(leg.symbol, {}).get('mark_price', fallback_price)
+                    except Exception as ex:
+                        self.add_log(f"[!] Error placing fallback limit order: {ex}")
+
+                if res and 'result' in res:
                     leg.status = "CLOSED"
                     leg.current_premium = exit_prem
                     pnl_record_legs[role] = {
@@ -651,6 +670,8 @@ class IchimokuScalpBot:
                         'exit_premium': exit_prem,
                         'size': leg.size
                     }
+                else:
+                    self.add_log(f"[!] CRITICAL: {role} ({leg.symbol}) remains OPEN!")
 
         # If any leg failed to close, we keep active_position open to retry
         any_open = any(l.status == "OPEN" for l in pos.legs.values())
@@ -727,20 +748,36 @@ class IchimokuScalpBot:
                 if isinstance(pos.entry_time, datetime):
                     elapsed_minutes = (datetime.now(IST) - pos.entry_time).total_seconds() / 60.0
 
+                # Dynamic TP/SL calculation based on Major Leg Entry Value
+                major_leg = pos.legs.get('major')
+                if major_leg:
+                    major_entry_premium_usd = major_leg.entry_premium * major_leg.size * 0.001
+                    tp_target_usd = major_entry_premium_usd * getattr(config, 'TAKE_PROFIT_PCT', 0.85)
+                    sl_target_usd = major_entry_premium_usd * getattr(config, 'STOP_LOSS_PCT', 0.40)
+                else:
+                    major_entry_premium_usd = 0.60
+                    tp_target_usd = config.TAKE_PROFIT_USD
+                    sl_target_usd = config.STOP_LOSS_USD
+
                 # Exit criteria tests
                 now_str = datetime.now(IST).strftime("%H:%M")
-                if total_pnl_usd >= config.TAKE_PROFIT_USD:
+                if total_pnl_usd >= tp_target_usd:
                     self.execute_exit("take_profit", btc_price, tickers)
-                elif total_pnl_usd <= -config.STOP_LOSS_USD:
+                elif total_pnl_usd <= -sl_target_usd:
                     self.execute_exit("stop_loss", btc_price, tickers)
+                elif pos.breakeven_reached and total_pnl_usd <= 0.05 * major_entry_premium_usd:
+                    self.execute_exit("cost_to_cost", btc_price, tickers)
                 elif elapsed_minutes >= getattr(config, 'MAX_HOLD_DURATION_MINUTES', 30):
                     self.execute_exit("max_holding_time", btc_price, tickers)
                 elif now_str >= config.FORCE_CLOSE_TIME:
                     self.execute_exit("force_close_eod", btc_price, tickers)
                 else:
-                    # Kijun line cross exit is disabled to prevent fee drag / false exits on 3m chart wiggles.
-                    # We rely instead on the Take Profit, Stop Loss, and Max Hold Duration gates.
-                    pass
+                    # Check break-even trigger
+                    be_thresh_pct = getattr(config, 'BREAKEVEN_THRESHOLD_PCT', 0.50)
+                    if not pos.breakeven_reached and total_pnl_usd >= be_thresh_pct * tp_target_usd:
+                        pos.breakeven_reached = True
+                        self.save_state()
+                        self.add_log(f"[✔] BREAK-EVEN PROTECT: PnL reached {be_thresh_pct*100:.0f}% of TP target. Cost-to-cost exit activated.")
 
             # 2. Check entry breakouts if no position is open
             else:
@@ -900,9 +937,22 @@ def build_views(bot, layout):
     stats_table.add_row("Trades Taken Today", f"{bot.trades_taken_today} / {config.MAX_TRADES_PER_DAY}")
     stats_table.add_row("Cumulative Trades (All Time)", str(total_trades))
     stats_table.add_row("Win Rate", f"{win_rate:.1f}%")
+    tp_str = f"{getattr(config, 'TAKE_PROFIT_PCT', 0.85) * 100:.0f}%" if hasattr(config, 'TAKE_PROFIT_PCT') else f"${config.TAKE_PROFIT_USD:.2f} USD"
+    sl_str = f"{getattr(config, 'STOP_LOSS_PCT', 0.40) * 100:.0f}%" if hasattr(config, 'STOP_LOSS_PCT') else f"${config.STOP_LOSS_USD:.2f} USD"
+    if bot.active_position:
+        major_leg = bot.active_position.legs.get('major')
+        if major_leg:
+            major_entry_premium_usd = major_leg.entry_premium * major_leg.size * 0.001
+            tp_usd = major_entry_premium_usd * getattr(config, 'TAKE_PROFIT_PCT', 0.85)
+            sl_usd = major_entry_premium_usd * getattr(config, 'STOP_LOSS_PCT', 0.40)
+            tp_str += f" (~${tp_usd:.2f} USD)"
+            sl_str += f" (~${sl_usd:.2f} USD)"
+            if bot.active_position.breakeven_reached:
+                tp_str += " [BE Locked]"
+
     stats_table.add_row("Net Profit (After Fees)", f"[green]${net_usd:.2f}[/]" if net_usd >= 0 else f"[red]${net_usd:.2f}[/]")
-    stats_table.add_row("Take Profit Limit", f"${config.TAKE_PROFIT_USD:.2f} USD")
-    stats_table.add_row("Stop Loss Cap", f"${config.STOP_LOSS_USD:.2f} USD")
+    stats_table.add_row("Take Profit Limit", tp_str)
+    stats_table.add_row("Stop Loss Cap", sl_str)
 
     right_column["stats_box"].update(Panel(stats_table, style="green"))
     layout["right"].update(right_column)

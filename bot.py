@@ -16,7 +16,7 @@ import config
 from config import (
     UPDATE_INTERVAL_SECONDS, DRY_RUN, ONLY_MANAGE, MAX_TRADES_PER_DAY,
     TRADE_WINDOW_START, TRADE_WINDOW_END, IV_PERCENTILE_THRESHOLD, TRENDING_THRESHOLD_60M,
-    IV_VALUE_THRESHOLD, MIN_LEG_OI, MAX_SPREAD_PCT
+    IV_VALUE_THRESHOLD, MIN_LEG_OI, MAX_SPREAD_PCT, MIN_VRP_GAP
 )
 
 console = Console()
@@ -107,9 +107,14 @@ def generate_market_table(ui_data, engine) -> Table:
 
 def generate_strategy_panel(data, position, gates_status) -> Panel:
     content = []
+    vrp_val = data.get('vrp', 0.0)
+    avg_option_iv = data.get('avg_option_iv', 0.0)
+    current_rv = data.get('current_rv', 0.0)
     content.append(f"Decision:      [bold magenta]{data['decision']}[/]")
     content.append(f"Gates:         {gates_status}")
-    content.append(f"IV %tile:      [bold]{data['iv_percentile']:.1f}%[/] (Threshold >= {IV_PERCENTILE_THRESHOLD}%)")
+    content.append(f"Realized Vol:  [bold]{current_rv*100:.1f}%[/]")
+    content.append(f"Average IV:    [bold]{avg_option_iv*100:.1f}%[/] (Threshold >= {IV_VALUE_THRESHOLD*100:.1f}%)")
+    content.append(f"VRP Gap:       [bold]{vrp_val*100:.1f}%[/] (Required >= {MIN_VRP_GAP*100:.1f}%)")
     content.append(f"Spot 60m Move: [bold]{data['spot_move_60m']:.3f}%[/] (Threshold <= {TRENDING_THRESHOLD_60M*100:.1f}%)")
     content.append("-" * 25)
     
@@ -278,9 +283,11 @@ def main():
                 legs_iv_ok = False
                 legs_liquidity_ok = False
                 legs_spread_ok = False
+                vrp_gate_ok = False
                 avg_short_iv = 0.0
                 min_oi = 0.0
                 max_spread_pct = 0.0
+                vrp_gap = 0.0
 
                 if legs_map:
                     all_present = all(sym in all_tickers for sym in legs_map.values())
@@ -315,10 +322,15 @@ def main():
                         max_spread_pct = max(spread_pcts) if spread_pcts else float('inf')
                         legs_spread_ok = (max_spread_pct <= MAX_SPREAD_PCT)
 
+                        # 4. Volatility Risk Premium (VRP) check
+                        vrp_gap = avg_short_iv - main.cached_iv
+                        vrp_gate_ok = (vrp_gap >= MIN_VRP_GAP)
+
                 gates_status = (
                     f"Time:{'✔' if time_gate_ok else '✘'} | "
                     f"IV%tile:{'✔' if iv_gate_ok else '✘'} ({main.cached_iv_percentile:.1f}%) | "
                     f"IVVal:{'✔' if legs_iv_ok else '✘'} ({avg_short_iv*100:.1f}%) | "
+                    f"VRP:{'✔' if vrp_gate_ok else '✘'} ({vrp_gap*100:.1f}%) | "
                     f"Trend:{'✔' if trend_gate_ok else '✘'} ({pct_move_60m*100:.2f}%) | "
                     f"Liq:{'✔' if legs_liquidity_ok else '✘'} ({min_oi:.1f}OI) | "
                     f"Sprd:{'✔' if legs_spread_ok else '✘'} ({max_spread_pct:.1f}%) | "
@@ -327,7 +339,7 @@ def main():
 
                 # Entry Logic
                 if not trade_manager.active_position and not ONLY_MANAGE:
-                    all_gates_passed = (time_gate_ok and iv_gate_ok and legs_iv_ok and 
+                    all_gates_passed = (time_gate_ok and iv_gate_ok and legs_iv_ok and vrp_gate_ok and
                                         trend_gate_ok and trades_limit_ok and legs_liquidity_ok and legs_spread_ok)
                     if config.TEST_ENTRY or all_gates_passed:
                         decision = "ENTER"
@@ -353,7 +365,10 @@ def main():
                     'tickers': active_tickers,
                     'decision': decision,
                     'iv_percentile': main.cached_iv_percentile,
-                    'spot_move_60m': pct_move_60m * 100
+                    'spot_move_60m': pct_move_60m * 100,
+                    'vrp': vrp_gap,
+                    'avg_option_iv': avg_short_iv,
+                    'current_rv': main.cached_iv
                 }
 
                 # CSV logging

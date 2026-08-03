@@ -46,6 +46,7 @@ class IronCondor:
         self.exit_reason = None
         self.fees_usd = 0.0
         self.initial_premium = 0.0
+        self.breakeven_reached = False
 
     @property
     def total_pnl(self):
@@ -214,6 +215,11 @@ class TradeManager:
                     self.exit_all_remaining("stop_loss", current_spot)
                     return
 
+                if getattr(pos, 'breakeven_reached', False) and melt_fraction <= 0.02:
+                    self._log(f"[!] BREAK-EVEN STOP MET (Melt fraction dropped back to {melt_fraction * 100:.1f}%)")
+                    self.exit_all_remaining("cost_to_cost", current_spot)
+                    return
+
                 if melt_fraction >= PROFIT_MAX_PCT:
                     self._log(f"[!] TAKE PROFIT MAX MET (Melt: {melt_fraction * 100:.1f}%)")
                     self.exit_all_remaining("profit_max", current_spot)
@@ -228,6 +234,10 @@ class TradeManager:
                         self._log(f"[!] TAKE PROFIT MIN MET (Melt: {melt_fraction * 100:.1f}%)")
                         self.exit_all_remaining("profit_min", current_spot)
                         return
+                else:
+                    if not getattr(pos, 'breakeven_reached', False) and melt_fraction >= 0.15:
+                        pos.breakeven_reached = True
+                        self._log(f"[✔] BREAK-EVEN PROTECT: Melt reached {melt_fraction * 100:.1f}%. Cost-to-cost exit activated.")
 
             # Leg Exit logic
             candles = self.client.get_history(resolution="5m", limit=25)
@@ -318,37 +328,66 @@ class TradeManager:
         for role, leg in pos.legs.items():
             if leg.status == "OPEN":
                 self.exit_leg(role, reason, current_spot)
-        pos.status = "CLOSED"
-        record = {
-            'entry_time': pos.entry_time.strftime("%Y-%m-%d %H:%M:%S") if isinstance(pos.entry_time, datetime) else str(pos.entry_time),
-            'exit_time': datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
-            'entry_spot': pos.entry_spot,
-            'entry_iv': pos.entry_iv,
-            'initial_premium': pos.initial_premium,
-            'pnl_points': pos.total_pnl,
-            'pnl_usd': pos.total_pnl * 0.001 * TRADE_QUANTITY,
-            'leg_exit_triggered': pos.leg_exit_triggered,
-            'exit_reason': pos.exit_reason,
-            'fees_usd': pos.fees_usd
-        }
-        self.trade_history.append(record)
-        self.save_trade_history()
-        self.active_position = None
+        
+        all_closed = all(leg.status == "CLOSED" for leg in pos.legs.values())
+        if all_closed:
+            pos.status = "CLOSED"
+            record = {
+                'entry_time': pos.entry_time.strftime("%Y-%m-%d %H:%M:%S") if isinstance(pos.entry_time, datetime) else str(pos.entry_time),
+                'exit_time': datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+                'entry_spot': pos.entry_spot,
+                'entry_iv': pos.entry_iv,
+                'initial_premium': pos.initial_premium,
+                'pnl_points': pos.total_pnl,
+                'pnl_usd': pos.total_pnl * 0.001 * TRADE_QUANTITY,
+                'leg_exit_triggered': pos.leg_exit_triggered,
+                'exit_reason': pos.exit_reason,
+                'fees_usd': pos.fees_usd
+            }
+            self.trade_history.append(record)
+            self.save_trade_history()
+            self.active_position = None
+        else:
+            self._log("[!] WARNING: Some legs failed to close. Retaining active position state to retry on next loop.")
 
     def exit_leg(self, role, reason, current_spot):
         leg = self.active_position.legs.get(role)
         if not leg or leg.status == "CLOSED": return
         self._log(f"[!] EXITING {role} ({leg.symbol}) | {reason} | PnL: {leg.pnl:.2f}")
+        
+        res = None
         if not DRY_RUN:
             exit_side = 'buy' if leg.side == 'sell' else 'sell'
             res = self.client.place_order(leg.symbol, exit_side, size=TRADE_QUANTITY)
             if not res or 'result' not in res:
                 err_msg = res if res else 'No Response'
-                self._log(f"[!] FAILED TO EXIT {role} ({leg.symbol}) | Response: {err_msg}")
-        leg.status = "CLOSED"
-        uncapped = 0.0001 * current_spot * (TRADE_QUANTITY * 0.001)
-        capped = 0.035 * leg.current_premium * (TRADE_QUANTITY * 0.001)
-        self.active_position.fees_usd += min(uncapped, capped)
+                self._log(f"[!] FAILED TO EXIT {role} ({leg.symbol}) via market order: {err_msg}")
+                # Try limit order fallback crossing the spread
+                try:
+                    ticker = self.client.get_ticker(leg.symbol)
+                    if ticker:
+                        if exit_side == 'buy':
+                            fallback_price = max(ticker.get('best_ask', 0), ticker.get('mark_price', 0)) + 3.0
+                            if fallback_price <= 3.0: fallback_price = leg.current_premium + 3.0
+                        else:
+                            fallback_price = min(ticker.get('best_bid', 0), ticker.get('mark_price', 0)) - 3.0
+                            if fallback_price <= 0: fallback_price = max(0.1, leg.current_premium - 3.0)
+                        
+                        self._log(f"[*] Fallback: Placing limit order to exit {role} at price {fallback_price:.3f}...")
+                        res_limit = self.client.place_order(leg.symbol, exit_side, size=TRADE_QUANTITY, order_type="limit_order", price=fallback_price)
+                        if res_limit and 'result' in res_limit:
+                            self._log(f"[✔] Limit order fallback succeeded!")
+                            res = res_limit
+                except Exception as ex:
+                    self._log(f"[!] Error placing fallback limit order: {ex}")
+
+        if DRY_RUN or (res and 'result' in res):
+            leg.status = "CLOSED"
+            uncapped = 0.0001 * current_spot * (TRADE_QUANTITY * 0.001)
+            capped = 0.035 * leg.current_premium * (TRADE_QUANTITY * 0.001)
+            self.active_position.fees_usd += min(uncapped, capped)
+        else:
+            self._log(f"[!] CRITICAL: Leg {role} ({leg.symbol}) remains OPEN!")
 
     def sync_from_exchange(self, all_tickers, btc_price):
         positions = self.client.get_positions()
@@ -383,7 +422,7 @@ class TradeManager:
                 'profit_factor': 0.0, 'total_pnl_usd': 0.0, 'max_drawdown_usd': 0.0,
                 'sharpe_ratio': 0.0, 'avg_holding_time': 0.0, 'total_fees_usd': 0.0,
                 'leg_exit_count': 0, 'leg_exit_pct': 0.0,
-                'reasons': {r: 0 for r in ['profit_min', 'profit_max', 'stop_loss', 'half_profit_CE',
+                'reasons': {r: 0 for r in ['profit_min', 'profit_max', 'stop_loss', 'cost_to_cost', 'half_profit_CE',
                                            'half_profit_PE', 'half_stop_CE', 'half_stop_PE', 'force_close_eod']}
             }
         pnl_usds = [t['pnl_usd'] for t in history]
@@ -430,7 +469,7 @@ class TradeManager:
         total_fees_usd = sum(t.get('fees_usd', 0) for t in history)
         leg_exit_count = sum(1 for t in history if t.get('leg_exit_triggered', False))
         leg_exit_pct = (leg_exit_count / total_trades) * 100.0
-        reasons_breakdown = {r: 0 for r in ['profit_min', 'profit_max', 'stop_loss', 'half_profit_CE',
+        reasons_breakdown = {r: 0 for r in ['profit_min', 'profit_max', 'stop_loss', 'cost_to_cost', 'half_profit_CE',
                                            'half_profit_PE', 'half_stop_CE', 'half_stop_PE', 'force_close_eod']}
         for t in history:
             reason = t.get('exit_reason')

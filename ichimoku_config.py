@@ -12,6 +12,11 @@ TIMEFRAME = "3m"                 # Candle interval ("1m", "3m", "5m")
 TAKE_PROFIT_USD = 2.40           # Target net profit of $2.40 on combined position
 STOP_LOSS_USD = 1.60             # Target net stop loss of $1.60 on combined position
 
+# Percentage-based Risk Targets (dynamic stop-loss / take-profit)
+TAKE_PROFIT_PCT = 0.85           # 85% of major leg entry investment value
+STOP_LOSS_PCT = 0.40             # 40% of major leg entry investment value
+BREAKEVEN_THRESHOLD_PCT = 0.50   # Lock break-even stop when target rises >= 50% of Take Profit
+
 # Strategy Parameters
 HEDGE_STRIKE_OFFSET = 400        # Strike price offset for the OTM hedge option
 

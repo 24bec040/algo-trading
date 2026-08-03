@@ -19,14 +19,15 @@ TEST_ENTRY = False               # Set to True to force-take a trade right now f
 
 # Entry Filters
 IV_PERCENTILE_THRESHOLD = 0      # Disabled (was 20)
-IV_VALUE_THRESHOLD = 0.0         # Disabled (was 0.40)
+IV_VALUE_THRESHOLD = 0.30        # Require average option IV >= 30%
+MIN_VRP_GAP = 0.05               # Require Option IV >= Realized Volatility + 5%
 TRENDING_THRESHOLD_60M = 0.008   # Spot max change <= 0.8% in 60m (12 bars * 5m)
 MIN_LEG_OI = 5.0                 # Minimum leg Open Interest (liquidity indicator)
 MAX_SPREAD_PCT = 5.0             # Maximum option spread percentage (max slippage checks)
 
 # Normal Exit Thresholds (applied on net premium collected)
-PROFIT_MIN_PCT = 0.30            # 30% melt (capture profits quick)
-PROFIT_MAX_PCT = 0.45            # 45% melt
+PROFIT_MIN_PCT = 0.10            # 10% melt (warning profit trigger)
+PROFIT_MAX_PCT = 0.20            # 20% melt (fast target)
 STOP_LOSS_PCT = 0.80             # 80% net loss stopping (optimized for small balance)
 
 # Leg Exit Thresholds (close losing side only)
