@@ -67,10 +67,27 @@ class StrategyEngine:
         self.iv_values.append(iv)
 
     def calculate_volatility_levels(self, spot_price, annualized_iv):
-        return {}, {}
+        """Calculate dynamic Support & Resistance bounds based on 24h high/low and 1-day Volatility Range."""
+        daily_move = spot_price * (annualized_iv / math.sqrt(365))
+        upper_resistance = spot_price + daily_move
+        lower_support = spot_price - daily_move
+        
+        self.resistance_levels = {
+            'R1': upper_resistance,
+            'R2': spot_price + (1.5 * daily_move)
+        }
+        self.support_levels = {
+            'S1': lower_support,
+            'S2': spot_price - (1.5 * daily_move)
+        }
+        return self.support_levels, self.resistance_levels
 
     def get_safe_zone_status(self, current_price):
-        return True
+        if not self.support_levels or not self.resistance_levels:
+            return True
+        s1 = self.support_levels.get('S1', current_price * 0.95)
+        r1 = self.resistance_levels.get('R1', current_price * 1.05)
+        return s1 <= current_price <= r1
 
     def check_pullback(self, history, side="CALL"):
         return False

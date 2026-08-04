@@ -9,8 +9,8 @@ MAX_TRADES_PER_DAY = 1           # Enforce max trades per day (1 scalp + 1 Iron 
 TIMEFRAME = "3m"                 # Candle interval ("1m", "3m", "5m")
 
 # Take Profit & Stop Loss in USD (combined position)
-TAKE_PROFIT_USD = 2.40           # Target net profit of $2.40 on combined position
-STOP_LOSS_USD = 1.60             # Target net stop loss of $1.60 on combined position
+TAKE_PROFIT_USD = 1.50           # Target net profit of $1.50 USD (fast $1-$2 target)
+STOP_LOSS_USD = 1.50             # Target net stop loss of $1.50 USD
 
 # Percentage-based Risk Targets (dynamic stop-loss / take-profit)
 TAKE_PROFIT_PCT = 0.85           # 85% of major leg entry investment value

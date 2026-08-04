@@ -94,15 +94,26 @@ def generate_market_table(ui_data, engine) -> Table:
     table.add_column("Delta/IV", style="magenta")
     table.add_column("Status", style="yellow")
     
+    btc_spot = ui_data['btc_price']
+    current_iv = ui_data.get('current_rv', 0.40)
+    supp, res = engine.calculate_volatility_levels(btc_spot, current_iv)
+    
+    r1 = res.get('R1', btc_spot * 1.02)
+    s1 = supp.get('S1', btc_spot * 0.98)
+    
+    table.add_row("RESISTANCE (R1)", f"[bold red]${r1:,.0f}[/]", "Upper Bound", "Channel Target")
+    table.add_row("SUPPORT (S1)", f"[bold green]${s1:,.0f}[/]", "Lower Bound", "Channel Target")
+    table.add_section()
+    
     for role, ticker in ui_data.get('tickers', {}).items():
         table.add_row(
             role.upper().replace('_', ' '), 
-            f"{ticker['mark_price']:.2f}",
-            f"{ticker['delta']:.3f} | {ticker['iv']*100:.1f}%",
+            f"${ticker['mark_price']:.1f}",
+            f"Delta: {ticker['delta']:>+5.3f} | IV: {ticker['iv']*100:.1f}%",
             f"B/A: {ticker['best_bid']:.1f}/{ticker['best_ask']:.1f}"
         )
     table.add_section()
-    table.add_row("BTCUSD SPOT", f"[bold cyan]${ui_data['btc_price']:,.1f}[/]", "", "")
+    table.add_row("BTCUSD SPOT", f"[bold cyan]${btc_spot:,.1f}[/]", "Live Spot", "Active Market")
     return table
 
 def generate_strategy_panel(data, position, gates_status) -> Panel:

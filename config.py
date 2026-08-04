@@ -8,22 +8,21 @@ TRADE_QUANTITY = 20               # Number of contracts per leg (0.001 multiplie
 MAX_TRADES_PER_DAY = 1           # Enforce max trades per day
 
 # Strike Selection Settings (OTM targets)
-SHORT_CALL_DELTA_TARGET = 0.16   # Target Delta for Call entries (targets $5-$6 daily return)
-SHORT_PUT_DELTA_TARGET = -0.16   # Target Delta for Put entries (negative value)
+SHORT_CALL_DELTA_TARGET = 0.10   # Target Delta for Call entries (~90% OTM probability)
+SHORT_PUT_DELTA_TARGET = -0.10   # Target Delta for Put entries (~90% OTM probability)
 
 # Entry Window (IST)
-TRADE_WINDOW_START = "05:30"     # IST Entry start
-TRADE_WINDOW_END = "12:30"       # IST Entry end
-FORCE_CLOSE_TIME = "15:00"       # IST Force Close time
-TEST_ENTRY = False               # Set to True to force-take a trade right now for testing
+TRADE_WINDOW_START = "05:30"     # IST Entry start window
+TRADE_WINDOW_END = "12:30"       # IST Entry end window
+FORCE_CLOSE_TIME = "14:50"       # IST Force Close time before settlement
 
-# Entry Filters
-IV_PERCENTILE_THRESHOLD = 0      # Disabled (was 20)
-IV_VALUE_THRESHOLD = 0.30        # Require average option IV >= 30%
-MIN_VRP_GAP = 0.05               # Require Option IV >= Realized Volatility + 5%
-TRENDING_THRESHOLD_60M = 0.008   # Spot max change <= 0.8% in 60m (12 bars * 5m)
-MIN_LEG_OI = 5.0                 # Minimum leg Open Interest (liquidity indicator)
-MAX_SPREAD_PCT = 5.0             # Maximum option spread percentage (max slippage checks)
+# Entry Filters (VRP & IV filters REMOVED as requested)
+IV_PERCENTILE_THRESHOLD = 0      # REMOVED / Disabled
+IV_VALUE_THRESHOLD = 0.0         # REMOVED / Disabled
+MIN_VRP_GAP = -1.0               # REMOVED / Disabled
+TRENDING_THRESHOLD_60M = 0.02    # 2.0% max spot movement in last 60 minutes
+MIN_LEG_OI = 1.0                 # Require liquid contract
+MAX_SPREAD_PCT = 15.0            # Allow standard option spreads
 
 # Normal Exit Thresholds (applied on net premium collected)
 PROFIT_MIN_PCT = 0.10            # 10% melt (warning profit trigger)
