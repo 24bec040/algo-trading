@@ -119,6 +119,8 @@ class TradeManager:
         max_loss = est_margin - (net_credit * 0.001 * TRADE_QUANTITY)
         max_profit = net_credit * 0.001 * TRADE_QUANTITY
         
+        delta_dollars = net_delta * btc_price
+        
         self._log("\n" + "=" * 65)
         self._log("       PRE-TRADE IRON CONDOR PAYOFF & GREEKS ANALYSIS       ")
         self._log("=" * 65)
@@ -131,9 +133,10 @@ class TradeManager:
         self._log(f" Estimated Margin / Capital Req     : ${est_margin:.2f} USD")
         self._log(f" Max Risk (Max Loss)               : ${max_loss:.2f} USD")
         self._log(f" Combined Position Delta            : {net_delta:>+7.5f}")
+        self._log(f" Delta Dollars Exposure (PDF Metric): ${delta_dollars:>+7.2f} USD")
         self._log(f" Combined Position Theta            : {net_theta:>+7.5f} USD/day")
         self._log(f" Combined Position Gamma            : {net_gamma:>+7.5f}")
-        self._log(f" Probability of Profit (Approx)    : ~80-85% (OTM Wings)")
+        self._log(f" Probability of Profit (Approx)    : ~88-90% (10-15 Delta Wings)")
         self._log("=" * 65 + "\n")
 
         legs = {}

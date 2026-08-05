@@ -12,8 +12,8 @@ SHORT_CALL_DELTA_TARGET = 0.10   # Target Delta for Call entries (~90% OTM proba
 SHORT_PUT_DELTA_TARGET = -0.10   # Target Delta for Put entries (~90% OTM probability)
 
 # Entry Window (IST)
-TRADE_WINDOW_START = "05:30"     # IST Entry start window
-TRADE_WINDOW_END = "12:30"       # IST Entry end window
+TRADE_WINDOW_START = "05:30"     # IST Early Morning Entry Start
+TRADE_WINDOW_END = "09:30"       # IST Early Morning Entry End (collect high premium)
 FORCE_CLOSE_TIME = "14:50"       # IST Force Close time before settlement
 
 # Entry Filters (VRP & IV filters REMOVED as requested)
@@ -22,7 +22,7 @@ IV_VALUE_THRESHOLD = 0.0         # REMOVED / Disabled
 MIN_VRP_GAP = -1.0               # REMOVED / Disabled
 TRENDING_THRESHOLD_60M = 0.02    # 2.0% max spot movement in last 60 minutes
 MIN_LEG_OI = 1.0                 # Require liquid contract
-MAX_SPREAD_PCT = 15.0            # Allow standard option spreads
+MAX_SPREAD_PCT = 35.0            # Allow standard OTM option bid-ask spreads
 
 # Normal Exit Thresholds (applied on net premium collected)
 PROFIT_MIN_PCT = 0.10            # 10% melt (warning profit trigger)
