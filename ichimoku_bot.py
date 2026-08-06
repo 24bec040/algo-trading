@@ -422,11 +422,11 @@ class IchimokuScalpBot:
                 if p2_close <= prev_top_cloud and p_close > top_cloud and (ichi_3m['prev_kijun'] is None or p_close > ichi_3m['prev_kijun']):
                     candidate_signal = "BUY_CALL"
                     
-                # Tenkan-Kijun crossover
+                # Tenkan-Kijun crossover or Strong Trend Continuation
                 t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
                 t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
                 if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
-                    if t_prev <= k_prev and t_now > k_now and p_close > top_cloud:
+                    if (t_prev <= k_prev and t_now > k_now and p_close > top_cloud) or (t_now > k_now and p_close > top_cloud and p_close > k_now):
                         candidate_signal = "BUY_CALL"
                         
         elif bias_4h == "BEARISH" and bias_1h == "BEARISH":
@@ -447,11 +447,11 @@ class IchimokuScalpBot:
                 if p2_close >= prev_bottom_cloud and p_close < bottom_cloud and (ichi_3m['prev_kijun'] is None or p_close < ichi_3m['prev_kijun']):
                     candidate_signal = "BUY_PUT"
                     
-                # Tenkan-Kijun crossover
+                # Tenkan-Kijun crossover or Strong Trend Continuation
                 t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
                 t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
                 if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
-                    if t_prev >= k_prev and t_now < k_now and p_close < bottom_cloud:
+                    if (t_prev >= k_prev and t_now < k_now and p_close < bottom_cloud) or (t_now < k_now and p_close < bottom_cloud and p_close < k_now):
                         candidate_signal = "BUY_PUT"
 
         # Apply S/R & Cloud direction filters if we found a breakout setup
@@ -464,8 +464,9 @@ class IchimokuScalpBot:
 
     def execute_entry(self, signal, btc_price, candle_time):
         self.query_trades_today_count()
-        if self.trades_taken_today >= config.MAX_TRADES_PER_DAY:
-            self.add_log(f"Entry signal {signal} ignored: Daily quota reached ({self.trades_taken_today}/{config.MAX_TRADES_PER_DAY})")
+        max_daily = getattr(config, 'MAX_TRADES_PER_DAY', 1)
+        if self.trades_taken_today >= max_daily:
+            self.add_log(f"Entry signal {signal} ignored: Strict daily limit reached ({self.trades_taken_today}/{max_daily})")
             return
 
         now_str = datetime.now(IST).strftime("%H:%M")

@@ -6,6 +6,7 @@ DELTA_BASE_URL = "https://api.india.delta.exchange"
 # Strategy Structure
 TRADE_QUANTITY = 20               # Number of contracts per leg (0.001 multiplier)
 MAX_TRADES_PER_DAY = 1           # Enforce max trades per day
+TEST_ENTRY = False               # Bypass safety gates for testing when True
 
 # Strike Selection Settings (OTM targets)
 SHORT_CALL_DELTA_TARGET = 0.10   # Target Delta for Call entries (~90% OTM probability)
@@ -13,7 +14,7 @@ SHORT_PUT_DELTA_TARGET = -0.10   # Target Delta for Put entries (~90% OTM probab
 
 # Entry Window (IST)
 TRADE_WINDOW_START = "05:30"     # IST Early Morning Entry Start
-TRADE_WINDOW_END = "09:30"       # IST Early Morning Entry End (collect high premium)
+TRADE_WINDOW_END = "09:30"       # IST Early Morning Entry End (05:30 to 09:30 IST daily)
 FORCE_CLOSE_TIME = "14:50"       # IST Force Close time before settlement
 
 # Entry Filters (VRP & IV filters REMOVED as requested)

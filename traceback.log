@@ -18,3 +18,353 @@ Traceback (most recent call last):
     is_call_side_open = pos.legs['sell_call'].status == "OPEN" or pos.legs['buy_call'].status == "OPEN"
                         ~~~~~~~~^^^^^^^^^^^^^
 KeyError: 'sell_call'
+
+--- ERROR AT 2026-08-05 19:28:08.391094 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:11.445028 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:15.620781 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:18.764195 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:22.124494 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:25.338144 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:28.686204 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:32.504730 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:36.429439 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:39.336746 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:42.855102 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:46.093075 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:49.369509 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:52.449915 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:55.455086 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:28:59.188735 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:02.539170 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:07.055349 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:10.616158 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:15.546904 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:18.595210 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:21.996183 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:24.975414 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:28.155112 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:31.582637 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:34.622805 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    if config.TEST_ENTRY or all_gates_passed:
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:38.959007 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:42.796997 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:46.604828 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:49.949323 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:52.965898 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:56.095861 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:29:59.250326 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:03.411772 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:08.616527 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:12.089207 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:15.055434 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:18.281546 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:22.020200 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:26.019297 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:29.574327 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:32.680094 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:38.263870 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:41.324274 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:44.482341 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:47.630591 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:50.571247 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:55.340809 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:30:58.954915 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'
+
+--- ERROR AT 2026-08-05 19:31:02.637775 ---
+Traceback (most recent call last):
+  File "/Users/chandu/trade test-1/bot.py", line 355, in main
+    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'config' has no attribute 'TEST_ENTRY'

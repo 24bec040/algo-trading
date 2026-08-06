@@ -352,15 +352,16 @@ def main():
                 if not trade_manager.active_position and not ONLY_MANAGE:
                     all_gates_passed = (time_gate_ok and iv_gate_ok and legs_iv_ok and vrp_gate_ok and
                                         trend_gate_ok and trades_limit_ok and legs_liquidity_ok and legs_spread_ok)
-                    if config.TEST_ENTRY or all_gates_passed:
+                    is_test_mode = getattr(config, 'TEST_ENTRY', False)
+                    if is_test_mode or all_gates_passed:
                         decision = "ENTER"
-                        if config.TEST_ENTRY:
+                        if is_test_mode:
                             add_log("TEST_ENTRY is active: Bypassing safety gates!")
                         trade_manager.enter_iron_condor(legs_map, all_tickers, btc_price, main.cached_iv)
                         main.trades_taken_today += 1
                         add_log(f"Entered trade {main.trades_taken_today}/{MAX_TRADES_PER_DAY}")
-                        if config.TEST_ENTRY:
-                            config.TEST_ENTRY = False
+                        if is_test_mode:
+                            setattr(config, 'TEST_ENTRY', False)
                             add_log("TEST_ENTRY auto-disabled after initial fill.")
                     else:
                         decision = "WAIT (Gates Locked)"
