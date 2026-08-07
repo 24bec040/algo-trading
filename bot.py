@@ -348,10 +348,17 @@ def main():
                     f"Limit:{'✔' if trades_limit_ok else '✘'} ({main.trades_taken_today}/{MAX_TRADES_PER_DAY})"
                 )
 
-                # Entry Logic
+                # Entry Logic — STRICT: check completed trades + daily lock file
                 if not trade_manager.active_position and not ONLY_MANAGE:
+                    # Double-check daily lock file (persists across restarts)
+                    import os
+                    IST_today = datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%Y-%m-%d")
+                    lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"daily_lock_{IST_today}.flag")
+                    lock_exists = os.path.exists(lock_file)
+
                     all_gates_passed = (time_gate_ok and iv_gate_ok and legs_iv_ok and vrp_gate_ok and
-                                        trend_gate_ok and trades_limit_ok and legs_liquidity_ok and legs_spread_ok)
+                                        trend_gate_ok and trades_limit_ok and legs_liquidity_ok and
+                                        legs_spread_ok and not lock_exists)
                     is_test_mode = getattr(config, 'TEST_ENTRY', False)
                     if is_test_mode or all_gates_passed:
                         decision = "ENTER"
@@ -359,10 +366,18 @@ def main():
                             add_log("TEST_ENTRY is active: Bypassing safety gates!")
                         trade_manager.enter_iron_condor(legs_map, all_tickers, btc_price, main.cached_iv)
                         main.trades_taken_today += 1
-                        add_log(f"Entered trade {main.trades_taken_today}/{MAX_TRADES_PER_DAY}")
+                        # Write daily lock file immediately — survives bot restarts
+                        try:
+                            with open(lock_file, 'w') as lf:
+                                lf.write(f"Trade entered at {datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime('%H:%M:%S')}")
+                        except Exception as e:
+                            add_log(f"Warning: Could not write daily lock file: {e}")
+                        add_log(f"Entered trade {main.trades_taken_today}/{MAX_TRADES_PER_DAY} | Lock file written for {IST_today}")
                         if is_test_mode:
                             setattr(config, 'TEST_ENTRY', False)
                             add_log("TEST_ENTRY auto-disabled after initial fill.")
+                    elif lock_exists:
+                        decision = "WAIT (Daily Lock Active — 1 trade already done today)"
                     else:
                         decision = "WAIT (Gates Locked)"
                 else:

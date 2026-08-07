@@ -4,7 +4,7 @@ DELTA_API_SECRET = "iNp4jbFsXY6jWpSMxOE1KcdQHSbwBWVmaSiWVzFecQ0x44qwBujK1Dx4OnKW
 DELTA_BASE_URL = "https://api.india.delta.exchange"
 
 # Strategy Structure
-TRADE_QUANTITY = 20               # Number of contracts per leg (0.001 multiplier)
+TRADE_QUANTITY = 30               # 30 contracts (0.03 BTC size) — margin ~$19.87, targets $1-2 USD net profit per day
 MAX_TRADES_PER_DAY = 1           # Enforce max trades per day
 TEST_ENTRY = False               # Bypass safety gates for testing when True
 
@@ -26,8 +26,8 @@ MIN_LEG_OI = 1.0                 # Require liquid contract
 MAX_SPREAD_PCT = 35.0            # Allow standard OTM option bid-ask spreads
 
 # Normal Exit Thresholds (applied on net premium collected)
-PROFIT_MIN_PCT = 0.10            # 10% melt (warning profit trigger)
-PROFIT_MAX_PCT = 0.20            # 20% melt (fast target)
+PROFIT_MIN_PCT = 0.50            # 50% melt — locks profit early if market shifts
+PROFIT_MAX_PCT = 0.75            # 75% melt target — captures $1.00-1.50 USD net profit with 30 lots
 STOP_LOSS_PCT = 0.80             # 80% net loss stopping (optimized for small balance)
 
 # Leg Exit Thresholds (close losing side only)

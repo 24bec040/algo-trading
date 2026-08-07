@@ -760,9 +760,13 @@ class IchimokuScalpBot:
                     tp_target_usd = config.TAKE_PROFIT_USD
                     sl_target_usd = config.STOP_LOSS_USD
 
-                # Exit criteria tests
+                # MINIMUM HOLD: Never exit before 5 minutes — prevents 7-second flips
                 now_str = datetime.now(IST).strftime("%H:%M")
-                if total_pnl_usd >= tp_target_usd:
+                MIN_HOLD_MINUTES = getattr(config, 'MIN_HOLD_MINUTES', 5)
+                if elapsed_minutes < MIN_HOLD_MINUTES:
+                    self.add_log(f"[Hold] Holding position — {elapsed_minutes:.1f}m elapsed, minimum {MIN_HOLD_MINUTES}m required before any exit.")
+                # Exit criteria tests (only after minimum hold)
+                elif total_pnl_usd >= tp_target_usd:
                     self.execute_exit("take_profit", btc_price, tickers)
                 elif total_pnl_usd <= -sl_target_usd:
                     self.execute_exit("stop_loss", btc_price, tickers)

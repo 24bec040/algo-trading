@@ -25,5 +25,6 @@ ENTRY_WINDOW_START = "00:00"     # Starts at midnight
 ENTRY_WINDOW_END = "16:45"       # Stops 45 minutes before 5:30 PM expiry
 FORCE_CLOSE_TIME = "17:00"       # Force close open positions at 5:00 PM IST to avoid settlement pin risk
 MAX_HOLD_DURATION_MINUTES = 30  # Max hold duration for a trade in minutes (exits if TP/SL not hit in 30 mins)
+MIN_HOLD_MINUTES = 5             # Minimum hold before ANY exit is allowed (prevents 7-second flip exits)
 MAX_SPREAD_PCT = 12.0            # Max allowed bid-ask spread percentage to prevent slippage
 MIN_LEG_OI = 5.0                 # Min open interest in options contract for trading liquidity
