@@ -5,7 +5,8 @@ import collections
 import math
 from datetime import datetime, timezone, timedelta
 from config import (DRY_RUN, TRADE_QUANTITY, PROFIT_MIN_PCT, PROFIT_MAX_PCT,
-                    STOP_LOSS_PCT, RISK_FREE_RATE, HALF_PROFIT_PCT, HALF_STOP_PCT)
+                    STOP_LOSS_PCT, RISK_FREE_RATE, HALF_PROFIT_PCT, HALF_STOP_PCT,
+                    PROFIT_TARGET_USD, STOP_LOSS_USD)
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -185,6 +186,7 @@ class TradeManager:
         t_years = remaining_hours / 8760.0
         current_time_str = now_ist.strftime("%H:%M")
 
+
         from config import TEST_ENTRY, FORCE_CLOSE_TIME
         if current_time_str >= FORCE_CLOSE_TIME and not TEST_ENTRY:
             self._log(f"[!] EOD FORCE CLOSE TRIGGERED ({FORCE_CLOSE_TIME} IST)")
@@ -202,45 +204,39 @@ class TradeManager:
 
         if is_call_side_open and is_put_side_open:
             if all(k in pos.legs for k in ['sell_call', 'sell_put', 'buy_call', 'buy_put']):
-                sells_init = pos.legs['sell_call'].entry_premium + pos.legs['sell_put'].entry_premium
-                buys_init = pos.legs['buy_call'].entry_premium + pos.legs['buy_put'].entry_premium
-                initial_net_prem = sells_init - buys_init
-
                 sells_curr = pos.legs['sell_call'].current_premium + pos.legs['sell_put'].current_premium
-                buys_curr = pos.legs['buy_call'].current_premium + pos.legs['buy_put'].current_premium
+                buys_curr  = pos.legs['buy_call'].current_premium  + pos.legs['buy_put'].current_premium
                 current_net_prem = sells_curr - buys_curr
+                multiplier = TRADE_QUANTITY * 0.001
 
-                melt_fraction = 1.0 - (current_net_prem / initial_net_prem) if initial_net_prem > 0 else 0.0
-                loss_fraction = (current_net_prem - initial_net_prem) / initial_net_prem if initial_net_prem > 0 else 0.0
+                # Dollar P&L: positive = profit (premium decayed), negative = loss (premium expanded)
+                pnl_usd = (pos.initial_premium - current_net_prem) * multiplier
 
-                if loss_fraction >= STOP_LOSS_PCT:
-                    self._log(f"[!] STOP LOSS MET (Loss: {loss_fraction * 100:.1f}%)")
+                self._log(f"[P&L] Net: {current_net_prem:.2f}pts (entry {pos.initial_premium:.2f}pts) | P&L: {pnl_usd:+.3f} USD | TP:+${PROFIT_TARGET_USD:.2f} SL:-${STOP_LOSS_USD:.2f}")
+
+                # ── STOP LOSS (fixed dollar) ─────────────────────────────────
+                if pnl_usd <= -STOP_LOSS_USD:
+                    self._log(f"[!] STOP LOSS HIT: P&L {pnl_usd:+.3f} USD <= -${STOP_LOSS_USD:.2f} USD")
                     self.exit_all_remaining("stop_loss", current_spot)
                     return
 
-                if getattr(pos, 'breakeven_reached', False) and melt_fraction <= 0.02:
-                    self._log(f"[!] BREAK-EVEN STOP MET (Melt fraction dropped back to {melt_fraction * 100:.1f}%)")
+                # ── BREAKEVEN PROTECT (exit at zero if profit reverses) ──────
+                if getattr(pos, 'breakeven_reached', False) and pnl_usd <= 0.0:
+                    self._log(f"[!] BREAK-EVEN STOP: profit dipped back to {pnl_usd:+.3f} USD")
                     self.exit_all_remaining("cost_to_cost", current_spot)
                     return
 
-                if melt_fraction >= PROFIT_MAX_PCT:
-                    self._log(f"[!] TAKE PROFIT MAX MET (Melt: {melt_fraction * 100:.1f}%)")
+                # ── TAKE PROFIT (fixed dollar) ────────────────────────────────
+                if pnl_usd >= PROFIT_TARGET_USD:
+                    self._log(f"[!] TAKE PROFIT HIT: P&L {pnl_usd:+.3f} USD >= +${PROFIT_TARGET_USD:.2f} USD")
                     self.exit_all_remaining("profit_max", current_spot)
                     return
 
-                if melt_fraction >= PROFIT_MIN_PCT:
-                    spot_moved_pct = abs(current_spot - pos.entry_spot) / pos.entry_spot
-                    time_warning = current_time_str >= "13:00"
-                    iv_increased = current_iv >= (pos.entry_iv + 0.02)
-                    spot_warning = spot_moved_pct > 0.004
-                    if time_warning or iv_increased or spot_warning:
-                        self._log(f"[!] TAKE PROFIT MIN MET (Melt: {melt_fraction * 100:.1f}%)")
-                        self.exit_all_remaining("profit_min", current_spot)
-                        return
-                else:
-                    if not getattr(pos, 'breakeven_reached', False) and melt_fraction >= 0.15:
-                        pos.breakeven_reached = True
-                        self._log(f"[✔] BREAK-EVEN PROTECT: Melt reached {melt_fraction * 100:.1f}%. Cost-to-cost exit activated.")
+                # ── Mark breakeven crossed (50% of target reached) ────────────
+                if not getattr(pos, 'breakeven_reached', False) and pnl_usd >= (PROFIT_TARGET_USD * 0.5):
+                    pos.breakeven_reached = True
+                    self._log(f"[✔] BREAK-EVEN PROTECT ARMED: P&L at +${pnl_usd:.3f} USD. Will exit at zero if profit reverses.")
+
 
             # Leg Exit logic
             candles = self.client.get_history(resolution="5m", limit=25)

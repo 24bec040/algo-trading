@@ -16,10 +16,110 @@ import config
 from config import (
     UPDATE_INTERVAL_SECONDS, DRY_RUN, ONLY_MANAGE, MAX_TRADES_PER_DAY,
     TRADE_WINDOW_START, TRADE_WINDOW_END, IV_PERCENTILE_THRESHOLD, TRENDING_THRESHOLD_60M,
-    IV_VALUE_THRESHOLD, MIN_LEG_OI, MAX_SPREAD_PCT, MIN_VRP_GAP
+    IV_VALUE_THRESHOLD, MIN_LEG_OI, MAX_SPREAD_PCT, MIN_VRP_GAP,
+    TRADE_QUANTITY, PROFIT_MAX_PCT, STOP_LOSS_PCT
 )
 
 console = Console()
+
+# ── Multi-Timeframe S/R Engine ────────────────────────────────────────────────
+def find_sr_levels(client, btc_price):
+    """
+    Collect Support/Resistance levels from 4 timeframes:
+      1W  → Weekly high/low (last 2 weeks from daily candles)
+      1D  → Previous day high/low + today's high/low
+      4H  → Swing highs/lows from last 5 days
+      1H  → Swing highs/lows from last 48 hours
+    Returns: (supports_list, resistances_list, log_lines)
+    """
+    levels = []   # list of (label, price)
+    log_lines = []
+
+    def find_swings(candles, label):
+        """Find swing highs and lows in candle list (2-bar confirmation)."""
+        found = []
+        for i in range(2, len(candles) - 2):
+            h = candles[i]['high']
+            l = candles[i]['low']
+            if (h > candles[i-1]['high'] and h > candles[i-2]['high'] and
+                    h > candles[i+1]['high'] and h > candles[i+2]['high']):
+                found.append((f"{label}_swing_H", h))
+            if (l < candles[i-1]['low'] and l < candles[i-2]['low'] and
+                    l < candles[i+1]['low'] and l < candles[i+2]['low']):
+                found.append((f"{label}_swing_L", l))
+        return found
+
+    try:
+        # 1. Weekly & Daily — from 1D candles (last 14 bars = 2 weeks)
+        daily = client.get_history(resolution="1d", limit=14)
+        if daily and len(daily) >= 2:
+            daily.sort(key=lambda x: x.get('time', 0))
+            # Previous day
+            prev_day = daily[-2]
+            levels.append(("PrevDay_H", prev_day['high']))
+            levels.append(("PrevDay_L", prev_day['low']))
+            # Today's range so far
+            today = daily[-1]
+            levels.append(("Today_H", today['high']))
+            levels.append(("Today_L", today['low']))
+            # Weekly (last 7 bars)
+            week = daily[-7:] if len(daily) >= 7 else daily
+            wk_h = max(c['high'] for c in week)
+            wk_l = min(c['low'] for c in week)
+            levels.append(("Week_H", wk_h))
+            levels.append(("Week_L", wk_l))
+            # Previous week (bars -14 to -7)
+            if len(daily) >= 14:
+                prev_week = daily[-14:-7]
+                levels.append(("PrevWeek_H", max(c['high'] for c in prev_week)))
+                levels.append(("PrevWeek_L", min(c['low'] for c in prev_week)))
+            log_lines.append(f"S/R Daily: PrevH={prev_day['high']:.0f} PrevL={prev_day['low']:.0f} | WeekH={wk_h:.0f} WeekL={wk_l:.0f}")
+
+        # 2. 4H swings (last ~5 days = 30 bars)
+        h4 = client.get_history(resolution="4h", limit=30)
+        if h4:
+            h4.sort(key=lambda x: x.get('time', 0))
+            swings_4h = find_swings(h4, "4H")
+            levels.extend(swings_4h)
+            log_lines.append(f"S/R 4H: {len(swings_4h)} swing levels found")
+
+        # 3. 1H swings (last 48 bars)
+        h1 = client.get_history(resolution="1h", limit=48)
+        if h1:
+            h1.sort(key=lambda x: x.get('time', 0))
+            swings_1h = find_swings(h1, "1H")
+            levels.extend(swings_1h)
+            log_lines.append(f"S/R 1H: {len(swings_1h)} swing levels found")
+
+    except Exception as e:
+        log_lines.append(f"S/R fetch error: {e}")
+
+    supports     = sorted([p for (_, p) in levels if p < btc_price], reverse=True)  # highest support first
+    resistances  = sorted([p for (_, p) in levels if p > btc_price])                # lowest resistance first
+    return supports, resistances, log_lines
+
+
+def check_sr_gate(btc_price, short_call_strike, short_put_strike, supports, resistances):
+    """
+    Iron Condor S/R gate:
+      - Short call must be >= nearest resistance (call side protected by resistance wall)
+      - Short put must be <= nearest support (put side protected by support wall)
+    Returns: (gate_ok, status_string)
+    """
+    if not supports or not resistances:
+        return True, "S/R:✔(no levels)"
+
+    nearest_res = resistances[0]   # lowest resistance above BTC
+    nearest_sup = supports[0]      # highest support below BTC
+
+    call_ok = short_call_strike >= nearest_res
+    put_ok  = short_put_strike  <= nearest_sup
+
+    status = (f"S/R:{'✔' if call_ok and put_ok else '✘'} "
+              f"Res={nearest_res:.0f}({'✔' if call_ok else f'Call {short_call_strike:.0f}✘'}) "
+              f"Sup={nearest_sup:.0f}({'✔' if put_ok else f'Put {short_put_strike:.0f}✘'})")
+    return (call_ok and put_ok), status
+# ─────────────────────────────────────────────────────────────────────────────
 
 def make_layout() -> Layout:
     layout = Layout()
@@ -295,10 +395,15 @@ def main():
                 legs_liquidity_ok = False
                 legs_spread_ok = False
                 vrp_gate_ok = False
+                strike_distance_ok = False
+                sr_gate_ok = False
+                sr_status = "S/R:?(no legs)"
                 avg_short_iv = 0.0
                 min_oi = 0.0
                 max_spread_pct = 0.0
                 vrp_gap = 0.0
+                call_distance = 0.0
+                put_distance = 0.0
 
                 if legs_map:
                     all_present = all(sym in all_tickers for sym in legs_map.values())
@@ -337,6 +442,32 @@ def main():
                         vrp_gap = avg_short_iv - main.cached_iv
                         vrp_gate_ok = (vrp_gap >= MIN_VRP_GAP)
 
+                        # 5. Strike Distance check — short legs must be >= 400 USD from BTC
+                        min_strike_dist = getattr(config, 'MIN_STRIKE_DISTANCE_USD', 400)
+                        sell_call_sym = legs_map['sell_call']
+                        sell_put_sym  = legs_map['sell_put']
+                        try:
+                            call_strike = float(sell_call_sym.split('-')[2])
+                            put_strike  = float(sell_put_sym.split('-')[2])
+                            call_distance = call_strike - btc_price
+                            put_distance  = btc_price - put_strike
+                            min_dist_actual = min(call_distance, put_distance)
+                            strike_distance_ok = (call_distance >= min_strike_dist and put_distance >= min_strike_dist)
+                        except:
+                            call_distance = put_distance = min_dist_actual = 0.0
+                            strike_distance_ok = False
+
+                        # 6. S/R Multi-Timeframe Gate — strikes must be beyond key S/R levels
+                        try:
+                            sr_supports, sr_resistances, sr_logs = find_sr_levels(client, btc_price)
+                            for sl in sr_logs:
+                                add_log(sl)
+                            sr_gate_ok, sr_status = check_sr_gate(
+                                btc_price, call_strike, put_strike, sr_supports, sr_resistances)
+                        except Exception as sr_err:
+                            sr_gate_ok = True  # fail-open if S/R fetch fails
+                            sr_status = f"S/R:!(err:{sr_err})"
+
                 gates_status = (
                     f"Time:{'✔' if time_gate_ok else '✘'} | "
                     f"IV%tile:{'✔' if iv_gate_ok else '✘'} ({main.cached_iv_percentile:.1f}%) | "
@@ -345,6 +476,8 @@ def main():
                     f"Trend:{'✔' if trend_gate_ok else '✘'} ({pct_move_60m*100:.2f}%) | "
                     f"Liq:{'✔' if legs_liquidity_ok else '✘'} ({min_oi:.1f}OI) | "
                     f"Sprd:{'✔' if legs_spread_ok else '✘'} ({max_spread_pct:.1f}%) | "
+                    f"Dist:{'✔' if strike_distance_ok else '✘'} (C+{call_distance:.0f}/P+{put_distance:.0f}) | "
+                    f"{sr_status} | "
                     f"Limit:{'✔' if trades_limit_ok else '✘'} ({main.trades_taken_today}/{MAX_TRADES_PER_DAY})"
                 )
 
@@ -358,12 +491,85 @@ def main():
 
                     all_gates_passed = (time_gate_ok and iv_gate_ok and legs_iv_ok and vrp_gate_ok and
                                         trend_gate_ok and trades_limit_ok and legs_liquidity_ok and
-                                        legs_spread_ok and not lock_exists)
+                                        legs_spread_ok and strike_distance_ok and sr_gate_ok and not lock_exists)
                     is_test_mode = getattr(config, 'TEST_ENTRY', False)
                     if is_test_mode or all_gates_passed:
                         decision = "ENTER"
                         if is_test_mode:
                             add_log("TEST_ENTRY is active: Bypassing safety gates!")
+
+                        # ── PAYOFF ANALYSIS (Delta-style Analyze page) ─────────
+                        try:
+                            sc_sym = legs_map['sell_call']; sp_sym = legs_map['sell_put']
+                            bc_sym = legs_map['buy_call'];  bp_sym = legs_map['buy_put']
+                            sc_mk = all_tickers[sc_sym]['mark_price']
+                            sp_mk = all_tickers[sp_sym]['mark_price']
+                            bc_mk = all_tickers[bc_sym]['mark_price']
+                            bp_mk = all_tickers[bp_sym]['mark_price']
+                            sc_strike = float(sc_sym.split('-')[2])
+                            bc_strike = float(bc_sym.split('-')[2])
+                            sp_strike = float(sp_sym.split('-')[2])
+                            bp_strike = float(bp_sym.split('-')[2])
+                            net_prem     = (sc_mk + sp_mk) - (bc_mk + bp_mk)
+                            multiplier   = TRADE_QUANTITY * 0.001
+                            call_spread  = bc_strike - sc_strike
+                            put_spread   = sp_strike - bp_strike
+                            max_prof_pts = net_prem
+                            max_loss_pts = max(call_spread, put_spread) - net_prem
+                            max_prof_usd = max_prof_pts * multiplier
+                            max_loss_usd = max_loss_pts * multiplier
+                            rr_ratio     = max_prof_usd / max_loss_usd if max_loss_usd > 0 else 0
+                            be_call      = sc_strike + net_prem
+                            be_put       = sp_strike - net_prem
+                            tp_usd       = net_prem * PROFIT_MAX_PCT * multiplier
+                            sl_usd       = net_prem * STOP_LOSS_PCT  * multiplier
+
+                            # P&L at expiry for a given BTC final price
+                            def pnl_at_expiry(F):
+                                sc_pnl = sc_mk - max(0, F - sc_strike)
+                                bc_pnl = -bc_mk + max(0, F - bc_strike)
+                                sp_pnl = sp_mk - max(0, sp_strike - F)
+                                bp_pnl = -bp_mk + max(0, bp_strike - F)
+                                return (sc_pnl + bc_pnl + sp_pnl + bp_pnl) * multiplier
+
+                            # 9 scenario points around the Iron Condor
+                            step = int((call_spread + put_spread) / 2)
+                            scenarios = sorted(set([
+                                int(bp_strike - step), int(bp_strike),
+                                int(sp_strike),        int(btc_price),
+                                int(sc_strike),        int(bc_strike),
+                                int(bc_strike + step),
+                            ]))
+
+                            add_log("=" * 58)
+                            add_log(f"📊  PAYOFF ANALYSIS  |  {TRADE_QUANTITY} lots × 0.001 BTC")
+                            add_log("=" * 58)
+                            add_log(f"  SELL {sc_sym.split('-0')[0]:14s} @ ${sc_mk:>7.2f}   BUY {bc_sym.split('-0')[0]:14s} @ ${bc_mk:>7.2f}")
+                            add_log(f"  SELL {sp_sym.split('-0')[0]:14s} @ ${sp_mk:>7.2f}   BUY {bp_sym.split('-0')[0]:14s} @ ${bp_mk:>7.2f}")
+                            add_log("-" * 58)
+                            add_log(f"  Max Profit : +${max_prof_usd:.3f} USD   Max Loss : -${max_loss_usd:.3f} USD")
+                            add_log(f"  R/R Ratio  :  {rr_ratio:.2f}            Breakevens: ${be_call:.0f} / ${be_put:.0f}")
+                            add_log(f"  Bot TP     : +${tp_usd:.3f} USD (75% melt)   SL: -${sl_usd:.3f} USD (80% exp)")
+                            add_log("-" * 58)
+                            add_log(f"  {'BTC Price':>10}  |  {'P&L at Expiry':>14}  |  Status")
+                            add_log(f"  {'-'*10}  |  {'-'*14}  |  {'-'*16}")
+                            for F in scenarios:
+                                pnl = pnl_at_expiry(F)
+                                if pnl >= max_prof_usd * 0.95:
+                                    status = "🟢 MAX PROFIT ZONE"
+                                elif pnl > 0:
+                                    status = "🟡 Profitable"
+                                elif pnl > -max_loss_usd * 0.5:
+                                    status = "🟠 Small Loss"
+                                else:
+                                    status = "🔴 Large Loss"
+                                marker = " ◀ NOW" if abs(F - btc_price) < step * 0.6 else ""
+                                add_log(f"  ${F:>10,.0f}  |  {pnl:>+14.3f} USD  |  {status}{marker}")
+                            add_log("=" * 58)
+                        except Exception as pe:
+                            add_log(f"Payoff calc error: {pe}")
+                        # ────────────────────────────────────────────────────────
+
                         trade_manager.enter_iron_condor(legs_map, all_tickers, btc_price, main.cached_iv)
                         main.trades_taken_today += 1
                         # Write daily lock file immediately — survives bot restarts

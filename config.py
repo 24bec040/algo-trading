@@ -13,8 +13,8 @@ SHORT_CALL_DELTA_TARGET = 0.10   # Target Delta for Call entries (~90% OTM proba
 SHORT_PUT_DELTA_TARGET = -0.10   # Target Delta for Put entries (~90% OTM probability)
 
 # Entry Window (IST)
-TRADE_WINDOW_START = "05:30"     # IST Early Morning Entry Start
-TRADE_WINDOW_END = "09:30"       # IST Early Morning Entry End (05:30 to 09:30 IST daily)
+TRADE_WINDOW_START = "07:00"     # IST Entry Start — after opening IV spike settles (was 05:30)
+TRADE_WINDOW_END = "09:30"       # IST Entry End (07:00 to 09:30 gives 8-10 hrs theta remaining)
 FORCE_CLOSE_TIME = "14:50"       # IST Force Close time before settlement
 
 # Entry Filters (VRP & IV filters REMOVED as requested)
@@ -23,12 +23,17 @@ IV_VALUE_THRESHOLD = 0.0         # REMOVED / Disabled
 MIN_VRP_GAP = -1.0               # REMOVED / Disabled
 TRENDING_THRESHOLD_60M = 0.02    # 2.0% max spot movement in last 60 minutes
 MIN_LEG_OI = 1.0                 # Require liquid contract
+MIN_STRIKE_DISTANCE_USD = 400    # Short strikes must be >=400 USD from BTC — blocks near-ATM entries without being too strict
 MAX_SPREAD_PCT = 35.0            # Allow standard OTM option bid-ask spreads
 
-# Normal Exit Thresholds (applied on net premium collected)
-PROFIT_MIN_PCT = 0.50            # 50% melt — locks profit early if market shifts
-PROFIT_MAX_PCT = 0.75            # 75% melt target — captures $1.00-1.50 USD net profit with 30 lots
-STOP_LOSS_PCT = 0.80             # 80% net loss stopping (optimized for small balance)
+# Exit Thresholds — FIXED DOLLAR P&L (not % of premium)
+PROFIT_TARGET_USD = 1.50         # Exit when position P&L reaches +$1.50 USD profit
+STOP_LOSS_USD     = 1.50         # Exit when position P&L reaches -$1.50 USD loss
+
+# Keep these for backward-compat with leg-exit code only
+PROFIT_MIN_PCT = 0.50            # (used only for post-leg-exit half-side management)
+PROFIT_MAX_PCT = 0.80            # (used only in payoff analysis display)
+STOP_LOSS_PCT  = 0.80            # (used only for post-leg-exit half-side management)
 
 # Leg Exit Thresholds (close losing side only)
 LEG_SHORT_EXPANSION_PCT = 0.25   # short option expanded >= 25%
