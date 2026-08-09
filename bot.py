@@ -17,7 +17,7 @@ from config import (
     UPDATE_INTERVAL_SECONDS, DRY_RUN, ONLY_MANAGE, MAX_TRADES_PER_DAY,
     TRADE_WINDOW_START, TRADE_WINDOW_END, IV_PERCENTILE_THRESHOLD, TRENDING_THRESHOLD_60M,
     IV_VALUE_THRESHOLD, MIN_LEG_OI, MAX_SPREAD_PCT, MIN_VRP_GAP,
-    TRADE_QUANTITY, PROFIT_MAX_PCT, STOP_LOSS_PCT
+    TRADE_QUANTITY, PROFIT_MAX_PCT, STOP_LOSS_PCT, PROFIT_TARGET_USD, STOP_LOSS_USD
 )
 
 console = Console()
@@ -549,7 +549,7 @@ def main():
                             add_log("-" * 58)
                             add_log(f"  Max Profit : +${max_prof_usd:.3f} USD   Max Loss : -${max_loss_usd:.3f} USD")
                             add_log(f"  R/R Ratio  :  {rr_ratio:.2f}            Breakevens: ${be_call:.0f} / ${be_put:.0f}")
-                            add_log(f"  Bot TP     : +${tp_usd:.3f} USD (75% melt)   SL: -${sl_usd:.3f} USD (80% exp)")
+                            add_log(f"  Bot TP     : +${PROFIT_TARGET_USD:.2f} USD             SL: -${STOP_LOSS_USD:.2f} USD")
                             add_log("-" * 58)
                             add_log(f"  {'BTC Price':>10}  |  {'P&L at Expiry':>14}  |  Status")
                             add_log(f"  {'-'*10}  |  {'-'*14}  |  {'-'*16}")

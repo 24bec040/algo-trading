@@ -1,0 +1,14 @@
+[Unit]
+Description=Delta Ichimoku Options Scalper Bot
+After=network.target
+
+[Service]
+Type=forking
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trade-bot
+ExecStart=/usr/bin/screen -dmS ichimoku-bot python3 /home/ubuntu/trade-bot/ichimoku_bot.py
+ExecStop=/usr/bin/screen -S ichimoku-bot -X quit
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

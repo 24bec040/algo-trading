@@ -4,8 +4,7 @@ import hmac
 import hashlib
 import json
 from datetime import datetime, timedelta
-from config import DELTA_API_KEY, DELTA_API_SECRET, DELTA_BASE_URL, SHORT_CALL_DELTA_TARGET, SHORT_PUT_DELTA_TARGET
-
+from config import DELTA_API_KEY, DELTA_API_SECRET, DELTA_BASE_URL, SHORT_CALL_DELTA_TARGET, SHORT_PUT_DELTA_TARGET, HEDGE_WIDTH_USD
 class DeltaClient:
     def __init__(self):
         self.base_url = DELTA_BASE_URL
@@ -150,29 +149,29 @@ class DeltaClient:
             
         put_strike = float(sell_put['strike_price'])
         
-        # 3. Dynamic Wing Selection (4 or 5 strikes away, $100 steps)
-        # Determine whether 400 or 500 USD distance Call and Put legs have better liquidity (measured by Open Interest)
-        call_4_target = call_strike + 400
-        call_5_target = call_strike + 500
-        put_4_target = put_strike - 400
-        put_5_target = put_strike - 500
+        # 3. Dynamic Wing Selection (using HEDGE_WIDTH_USD from config)
+        # Determine whether HEDGE_WIDTH_USD or HEDGE_WIDTH_USD + 100 distance Call and Put legs have better liquidity (measured by Open Interest)
+        call_near_target = call_strike + HEDGE_WIDTH_USD
+        call_far_target = call_strike + HEDGE_WIDTH_USD + 100
+        put_near_target = put_strike - HEDGE_WIDTH_USD
+        put_far_target = put_strike - (HEDGE_WIDTH_USD + 100)
 
         # Find closest actual instruments
-        c4_inst = min(calls, key=lambda x: abs(float(x['strike_price']) - call_4_target))
-        c5_inst = min(calls, key=lambda x: abs(float(x['strike_price']) - call_5_target))
-        p4_inst = min(puts, key=lambda x: abs(float(x['strike_price']) - put_4_target))
-        p5_inst = min(puts, key=lambda x: abs(float(x['strike_price']) - put_5_target))
+        c_near_inst = min(calls, key=lambda x: abs(float(x['strike_price']) - call_near_target))
+        c_far_inst = min(calls, key=lambda x: abs(float(x['strike_price']) - call_far_target))
+        p_near_inst = min(puts, key=lambda x: abs(float(x['strike_price']) - put_near_target))
+        p_far_inst = min(puts, key=lambda x: abs(float(x['strike_price']) - put_far_target))
 
         # Liquidity (OI) check
-        oi_4 = float(tickers.get(c4_inst['symbol'], {}).get('oi', 0) or 0) + float(tickers.get(p4_inst['symbol'], {}).get('oi', 0) or 0)
-        oi_5 = float(tickers.get(c5_inst['symbol'], {}).get('oi', 0) or 0) + float(tickers.get(p5_inst['symbol'], {}).get('oi', 0) or 0)
+        oi_near = float(tickers.get(c_near_inst['symbol'], {}).get('oi', 0) or 0) + float(tickers.get(p_near_inst['symbol'], {}).get('oi', 0) or 0)
+        oi_far = float(tickers.get(c_far_inst['symbol'], {}).get('oi', 0) or 0) + float(tickers.get(p_far_inst['symbol'], {}).get('oi', 0) or 0)
 
-        if oi_5 > oi_4:
-            buy_call = c5_inst
-            buy_put = p5_inst
+        if oi_far > oi_near:
+            buy_call = c_far_inst
+            buy_put = p_far_inst
         else:
-            buy_call = c4_inst
-            buy_put = p4_inst
+            buy_call = c_near_inst
+            buy_put = p_near_inst
             
         # Find product ID and populate product cache for faster orders
         for inst in insts:

@@ -9,8 +9,9 @@ MAX_TRADES_PER_DAY = 1           # Enforce max trades per day
 TEST_ENTRY = False               # Bypass safety gates for testing when True
 
 # Strike Selection Settings (OTM targets)
-SHORT_CALL_DELTA_TARGET = 0.10   # Target Delta for Call entries (~90% OTM probability)
-SHORT_PUT_DELTA_TARGET = -0.10   # Target Delta for Put entries (~90% OTM probability)
+SHORT_CALL_DELTA_TARGET = 0.20   # Balanced setup: Target Delta for Call entries
+SHORT_PUT_DELTA_TARGET = -0.20   # Balanced setup: Target Delta for Put entries
+HEDGE_WIDTH_USD = 1000           # Balanced setup: Width of wings (hedge legs)
 
 # Entry Window (IST)
 TRADE_WINDOW_START = "07:00"     # IST Entry Start — after opening IV spike settles (was 05:30)
