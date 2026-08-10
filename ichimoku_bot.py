@@ -332,8 +332,8 @@ class IchimokuScalpBot:
         if hasattr(self, 'sr_levels_1h'): sr_levels.extend(self.sr_levels_1h)
         if hasattr(self, 'sr_levels_15m'): sr_levels.extend(self.sr_levels_15m)
 
-        # Minimum required runway distance in USD to prevent buying into visual barriers
-        RUNWAY_MIN_USD = 200.0
+        # Minimum required runway distance in USD from config (0.0 disables tests)
+        RUNWAY_MIN_USD = getattr(config, 'RUNWAY_MIN_USD', 0.0)
 
         if signal == "BUY_CALL":
             # 1. Cloud direction check: cloud must be upward (green)
@@ -341,22 +341,23 @@ class IchimokuScalpBot:
                 self.add_log("[!] FILTERED: BUY_CALL cloud is DOWN (Span A < Span B).")
                 return False
 
-            # 2. Support & Resistance Filter
-            resistances = [l['price'] for l in sr_levels if l['type'] == 'RESISTANCE']
-            if resistances:
-                # Closest resistance sitting ABOVE current price
-                overhead_res = [r for r in resistances if r > p_close]
-                if overhead_res:
-                    closest_r = min(overhead_res)
-                    dist = closest_r - p_close
-                    if dist < RUNWAY_MIN_USD:
-                        # Check if candle just broke above it (breakout candidate)
-                        if p_close > closest_r and p2_close <= closest_r:
-                            self.add_log(f"[✔] BREAKOUT: Spot broke above Resistance at ${closest_r:.1f}.")
-                            return True
-                        else:
-                            self.add_log(f"[!] FILTERED: BUY_CALL near Resistance at ${closest_r:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
-                            return False
+            # 2. Support & Resistance Filter (Bypassed if RUNWAY_MIN_USD <= 0.0)
+            if RUNWAY_MIN_USD > 0.0:
+                resistances = [l['price'] for l in sr_levels if l['type'] == 'RESISTANCE']
+                if resistances:
+                    # Closest resistance sitting ABOVE current price
+                    overhead_res = [r for r in resistances if r > p_close]
+                    if overhead_res:
+                        closest_r = min(overhead_res)
+                        dist = closest_r - p_close
+                        if dist < RUNWAY_MIN_USD:
+                            # Check if candle just broke above it (breakout candidate)
+                            if p_close > closest_r and p2_close <= closest_r:
+                                self.add_log(f"[✔] BREAKOUT: Spot broke above Resistance at ${closest_r:.1f}.")
+                                return True
+                            else:
+                                self.add_log(f"[!] FILTERED: BUY_CALL near Resistance at ${closest_r:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
+                                return False
                             
             self.add_log("[✔] BUY_CALL passed all S/R & Cloud alignment checks.")
             return True
@@ -367,22 +368,23 @@ class IchimokuScalpBot:
                 self.add_log("[!] FILTERED: BUY_PUT cloud is UP (Span A > Span B).")
                 return False
 
-            # 2. Support & Resistance Filter
-            supports = [l['price'] for l in sr_levels if l['type'] == 'SUPPORT']
-            if supports:
-                # Closest support sitting BELOW current price
-                underfoot_sup = [s for s in supports if s < p_close]
-                if underfoot_sup:
-                    closest_s = max(underfoot_sup)
-                    dist = p_close - closest_s
-                    if dist < RUNWAY_MIN_USD:
-                        # Check if candle just broke below it (breakout candidate)
-                        if p_close < closest_s and p2_close >= closest_s:
-                            self.add_log(f"[✔] BREAKOUT: Spot broke below Support at ${closest_s:.1f}.")
-                            return True
-                        else:
-                            self.add_log(f"[!] FILTERED: BUY_PUT near Support at ${closest_s:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
-                            return False
+            # 2. Support & Resistance Filter (Bypassed if RUNWAY_MIN_USD <= 0.0)
+            if RUNWAY_MIN_USD > 0.0:
+                supports = [l['price'] for l in sr_levels if l['type'] == 'SUPPORT']
+                if supports:
+                    # Closest support sitting BELOW current price
+                    underfoot_sup = [s for s in supports if s < p_close]
+                    if underfoot_sup:
+                        closest_s = max(underfoot_sup)
+                        dist = p_close - closest_s
+                        if dist < RUNWAY_MIN_USD:
+                            # Check if candle just broke below it (breakout candidate)
+                            if p_close < closest_s and p2_close >= closest_s:
+                                self.add_log(f"[✔] BREAKOUT: Spot broke below Support at ${closest_s:.1f}.")
+                                return True
+                            else:
+                                self.add_log(f"[!] FILTERED: BUY_PUT near Support at ${closest_s:.1f} (${dist:.1f} away, runway ${RUNWAY_MIN_USD}).")
+                                return False
 
             self.add_log("[✔] BUY_PUT passed all S/R & Cloud alignment checks.")
             return True
