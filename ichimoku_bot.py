@@ -405,56 +405,48 @@ class IchimokuScalpBot:
         
         candidate_signal = None
         
-        # If 4H and 1H trends are NOT aligned, do not trade!
-        if bias_4h == "BULLISH" and bias_1h == "BULLISH":
-            # Check bullish entry on 3m chart (using closed candles: index -2 vs -3)
-            p_close = ichi_3m['prev_close']
-            p2_close = ichi_3m['prev2_close']
+        # Bullish alignment: 1H is BULLISH and 4H is NOT BEARISH
+        is_bullish_trend = (bias_1h == "BULLISH" and bias_4h != "BEARISH") or (bias_4h == "BULLISH" and bias_1h != "BEARISH")
+        # Bearish alignment: 1H is BEARISH and 4H is NOT BULLISH
+        is_bearish_trend = (bias_1h == "BEARISH" and bias_4h != "BULLISH") or (bias_4h == "BEARISH" and bias_1h != "BULLISH")
+        
+        p_close = ichi_3m['prev_close']
+        p2_close = ichi_3m['prev2_close']
+        
+        p_span_a = ichi_3m['prev_span_a']
+        p_span_b = ichi_3m['prev_span_b']
+        p2_span_a = ichi_3m['prev2_span_a']
+        p2_span_b = ichi_3m['prev2_span_b']
+
+        if is_bullish_trend and all(v is not None for v in [p_span_a, p_span_b, p2_span_a, p2_span_b]):
+            top_cloud = max(p_span_a, p_span_b)
+            prev_top_cloud = max(p2_span_a, p2_span_b)
             
-            p_span_a = ichi_3m['prev_span_a']
-            p_span_b = ichi_3m['prev_span_b']
-            p2_span_a = ichi_3m['prev2_span_a']
-            p2_span_b = ichi_3m['prev2_span_b']
-            
-            if all(v is not None for v in [p_span_a, p_span_b, p2_span_a, p2_span_b]):
-                top_cloud = max(p_span_a, p_span_b)
-                prev_top_cloud = max(p2_span_a, p2_span_b)
+            # Cloud breakout
+            if p2_close <= prev_top_cloud and p_close > top_cloud and (ichi_3m['prev_kijun'] is None or p_close > ichi_3m['prev_kijun']):
+                candidate_signal = "BUY_CALL"
                 
-                # Cloud breakout
-                if p2_close <= prev_top_cloud and p_close > top_cloud and (ichi_3m['prev_kijun'] is None or p_close > ichi_3m['prev_kijun']):
+            # Tenkan-Kijun crossover or Strong Trend Continuation
+            t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
+            t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
+            if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
+                if (t_prev <= k_prev and t_now > k_now and p_close > top_cloud) or (t_now > k_now and p_close > top_cloud and p_close > k_now):
                     candidate_signal = "BUY_CALL"
                     
-                # Tenkan-Kijun crossover or Strong Trend Continuation
-                t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
-                t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
-                if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
-                    if (t_prev <= k_prev and t_now > k_now and p_close > top_cloud) or (t_now > k_now and p_close > top_cloud and p_close > k_now):
-                        candidate_signal = "BUY_CALL"
-                        
-        elif bias_4h == "BEARISH" and bias_1h == "BEARISH":
-            # Check bearish entry on 3m chart (using closed candles: index -2 vs -3)
-            p_close = ichi_3m['prev_close']
-            p2_close = ichi_3m['prev2_close']
+        elif is_bearish_trend and all(v is not None for v in [p_span_a, p_span_b, p2_span_a, p2_span_b]):
+            bottom_cloud = min(p_span_a, p_span_b)
+            prev_bottom_cloud = min(p2_span_a, p2_span_b)
             
-            p_span_a = ichi_3m['prev_span_a']
-            p_span_b = ichi_3m['prev_span_b']
-            p2_span_a = ichi_3m['prev2_span_a']
-            p2_span_b = ichi_3m['prev2_span_b']
-            
-            if all(v is not None for v in [p_span_a, p_span_b, p2_span_a, p2_span_b]):
-                bottom_cloud = min(p_span_a, p_span_b)
-                prev_bottom_cloud = min(p2_span_a, p2_span_b)
+            # Cloud breakout
+            if p2_close >= prev_bottom_cloud and p_close < bottom_cloud and (ichi_3m['prev_kijun'] is None or p_close < ichi_3m['prev_kijun']):
+                candidate_signal = "BUY_PUT"
                 
-                # Cloud breakout
-                if p2_close >= prev_bottom_cloud and p_close < bottom_cloud and (ichi_3m['prev_kijun'] is None or p_close < ichi_3m['prev_kijun']):
+            # Tenkan-Kijun crossover or Strong Trend Continuation
+            t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
+            t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
+            if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
+                if (t_prev >= k_prev and t_now < k_now and p_close < bottom_cloud) or (t_now < k_now and p_close < bottom_cloud and p_close < k_now):
                     candidate_signal = "BUY_PUT"
-                    
-                # Tenkan-Kijun crossover or Strong Trend Continuation
-                t_now, k_now = ichi_3m['prev_tenkan'], ichi_3m['prev_kijun']
-                t_prev, k_prev = ichi_3m['prev2_tenkan'], ichi_3m['prev2_kijun']
-                if not candidate_signal and all(v is not None for v in [t_now, k_now, t_prev, k_prev]):
-                    if (t_prev >= k_prev and t_now < k_now and p_close < bottom_cloud) or (t_now < k_now and p_close < bottom_cloud and p_close < k_now):
-                        candidate_signal = "BUY_PUT"
 
         # Apply S/R & Cloud direction filters if we found a breakout setup
         if candidate_signal:
@@ -466,14 +458,14 @@ class IchimokuScalpBot:
 
     def execute_entry(self, signal, btc_price, candle_time):
         self.query_trades_today_count()
-        max_daily = getattr(config, 'MAX_TRADES_PER_DAY', 1)
+        max_daily = getattr(config, 'MAX_TRADES_PER_DAY', 2)
         if self.trades_taken_today >= max_daily:
             self.add_log(f"Entry signal {signal} ignored: Strict daily limit reached ({self.trades_taken_today}/{max_daily})")
             return
 
         now_str = datetime.now(IST).strftime("%H:%M")
-        if not (config.ENTRY_WINDOW_START <= now_str <= config.ENTRY_WINDOW_END):
-            self.add_log(f"Entry signal ignored: Outside allowed entry window {config.ENTRY_WINDOW_START}-{config.ENTRY_WINDOW_END} ({now_str})")
+        if "16:45" <= now_str < "17:30":
+            self.add_log(f"Entry signal ignored: Inside daily options settlement pause window 16:45-17:30 IST ({now_str})")
             return
 
         expiry_label = self.client.get_nearest_expiration()

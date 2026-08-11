@@ -1,4 +1,7 @@
-from config import DELTA_API_KEY, DELTA_API_SECRET, DELTA_BASE_URL
+# API Credentials
+DELTA_API_KEY = "9Fi6OXbW4RKmaq0fgVljd1f005y4Wb"
+DELTA_API_SECRET = "iNp4jbFsXY6jWpSMxOE1KcdQHSbwBWVmaSiWVzFecQ0x44qwBujK1Dx4OnKW"
+DELTA_BASE_URL = "https://api.india.delta.exchange"
 
 # Option Scalper Configuration
 MAJOR_LEG_QUANTITY = 30          # Major leg contracts size (30 lots)
@@ -23,7 +26,7 @@ RUNWAY_MIN_USD = 0.0             # Minimum runway to S/R check (0.0 to disable p
 
 # Time limits (IST)
 ENTRY_WINDOW_START = "00:00"     # Starts at midnight
-ENTRY_WINDOW_END = "16:45"       # Stops 45 minutes before 5:30 PM expiry
+ENTRY_WINDOW_END = "23:59"       # 24-hour operation (settlement pause dynamically handled 16:45-17:30 IST)
 FORCE_CLOSE_TIME = "17:00"       # Force close open positions at 5:00 PM IST to avoid settlement pin risk
 MAX_HOLD_DURATION_MINUTES = 30  # Max hold duration for a trade in minutes (exits if TP/SL not hit in 30 mins)
 MIN_HOLD_MINUTES = 5             # Minimum hold before ANY exit is allowed (prevents 7-second flip exits)

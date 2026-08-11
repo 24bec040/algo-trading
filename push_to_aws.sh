@@ -27,7 +27,7 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$USER@$IP" "mkdir -p ~/trade-bot"
 
 # 4. Copy files
 echo "[*] Copying bot files to AWS..."
-scp -i "$KEY" -o StrictHostKeyChecking=no bot.py delta_client.py engine.py trades.py config.py logger.py ichimoku_bot.py ichimoku_config.py ichimoku-bot.service requirements.txt deploy.sh "$USER@$IP:~/trade-bot/"
+scp -i "$KEY" -o StrictHostKeyChecking=no delta_client.py logger.py ichimoku_bot.py ichimoku_config.py ichimoku-bot.service requirements.txt deploy.sh "$USER@$IP:~/trade-bot/"
 if [ $? -ne 0 ]; then
     echo "[!] ERROR: Failed to transfer files."
     exit 1

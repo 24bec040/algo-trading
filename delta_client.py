@@ -4,7 +4,10 @@ import hmac
 import hashlib
 import json
 from datetime import datetime, timedelta
-from config import DELTA_API_KEY, DELTA_API_SECRET, DELTA_BASE_URL, SHORT_CALL_DELTA_TARGET, SHORT_PUT_DELTA_TARGET, HEDGE_WIDTH_USD
+from ichimoku_config import DELTA_API_KEY, DELTA_API_SECRET, DELTA_BASE_URL
+SHORT_CALL_DELTA_TARGET = 0.20
+SHORT_PUT_DELTA_TARGET = -0.20
+HEDGE_WIDTH_USD = 1000
 class DeltaClient:
     def __init__(self):
         self.base_url = DELTA_BASE_URL
