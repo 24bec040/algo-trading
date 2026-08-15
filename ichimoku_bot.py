@@ -247,6 +247,56 @@ class IchimokuScalpBot:
         else:
             return "NEUTRAL"
 
+    def calculate_adx(self, candles, period=14):
+        if not candles or len(candles) < (period * 2):
+            return 20.0
+
+        candles_sorted = sorted(candles, key=lambda x: x.get('time', 0))
+        highs = [float(c['high']) for c in candles_sorted]
+        lows = [float(c['low']) for c in candles_sorted]
+        closes = [float(c['close']) for c in candles_sorted]
+
+        tr_list, plus_dm, minus_dm = [], [], []
+
+        for i in range(1, len(candles_sorted)):
+            h_diff = highs[i] - highs[i-1]
+            l_diff = lows[i-1] - lows[i]
+
+            p_dm = h_diff if (h_diff > l_diff and h_diff > 0) else 0.0
+            m_dm = l_diff if (l_diff > h_diff and l_diff > 0) else 0.0
+
+            tr = max(highs[i] - lows[i], abs(highs[i] - closes[i-1]), abs(lows[i] - closes[i-1]))
+
+            plus_dm.append(p_dm)
+            minus_dm.append(m_dm)
+            tr_list.append(tr)
+
+        if len(tr_list) < period:
+            return 20.0
+
+        smooth_tr = sum(tr_list[:period])
+        smooth_p_dm = sum(plus_dm[:period])
+        smooth_m_dm = sum(minus_dm[:period])
+
+        dx_list = []
+        for i in range(period, len(tr_list)):
+            smooth_tr = smooth_tr - (smooth_tr / period) + tr_list[i]
+            smooth_p_dm = smooth_p_dm - (smooth_p_dm / period) + plus_dm[i]
+            smooth_m_dm = smooth_m_dm - (smooth_m_dm / period) + minus_dm[i]
+
+            plus_di = (100.0 * smooth_p_dm / smooth_tr) if smooth_tr > 0 else 0
+            minus_di = (100.0 * smooth_m_dm / smooth_tr) if smooth_tr > 0 else 0
+
+            di_sum = plus_di + minus_di
+            dx = (100.0 * abs(plus_di - minus_di) / di_sum) if di_sum > 0 else 0
+            dx_list.append(dx)
+
+        if not dx_list:
+            return 20.0
+
+        adx = sum(dx_list[-period:]) / len(dx_list[-period:])
+        return round(adx, 2)
+
     def find_swing_levels(self, candles, left_window=10, right_window=5):
         if not candles or len(candles) < (left_window + right_window + 1):
             return []
@@ -302,6 +352,7 @@ class IchimokuScalpBot:
         # Fetch 3m candles (or whatever configuration timeframe) for signal triggers
         candles_3m = self.client.get_history(resolution=config.TIMEFRAME, limit=80)
         ichi_3m = self.calculate_ichimoku(candles_3m)
+        ichi_3m['adx'] = self.calculate_adx(candles_3m)
         
         tfs = {
             '4h': ichi_4h,
@@ -316,7 +367,8 @@ class IchimokuScalpBot:
         """
         Filters the signal based on:
         1. 3m cloud color direction (Up for CALL, Down for PUT).
-        2. Clean runway check or breakout validation against 4H/1H/15m Support/Resistance levels.
+        2. ADX trend strength filter (ADX >= ADX_MIN).
+        3. Clean runway check or breakout validation against 4H/1H/15m Support/Resistance levels.
         """
         p_close = ichi_3m['prev_close']
         p2_close = ichi_3m['prev2_close']
@@ -324,6 +376,13 @@ class IchimokuScalpBot:
         p_span_b = ichi_3m['prev_span_b']
 
         if p_span_a is None or p_span_b is None:
+            return False
+
+        # ADX Trend Filter (Bypassed if ADX_MIN <= 0.0)
+        ADX_MIN = getattr(config, 'ADX_MIN', 15.0)
+        adx_val = ichi_3m.get('adx', 20.0)
+        if ADX_MIN > 0.0 and adx_val < ADX_MIN:
+            self.add_log(f"[!] FILTERED: ADX weak ({adx_val:.1f} < {ADX_MIN:.1f}). Sideways market.")
             return False
 
         # Gather all support and resistance coordinates
@@ -743,40 +802,29 @@ class IchimokuScalpBot:
                 if isinstance(pos.entry_time, datetime):
                     elapsed_minutes = (datetime.now(IST) - pos.entry_time).total_seconds() / 60.0
 
-                # Dynamic TP/SL calculation based on Major Leg Entry Value
-                major_leg = pos.legs.get('major')
-                if major_leg:
-                    major_entry_premium_usd = major_leg.entry_premium * major_leg.size * 0.001
-                    tp_target_usd = major_entry_premium_usd * getattr(config, 'TAKE_PROFIT_PCT', 0.85)
-                    sl_target_usd = major_entry_premium_usd * getattr(config, 'STOP_LOSS_PCT', 0.40)
-                else:
-                    major_entry_premium_usd = 0.60
-                    tp_target_usd = config.TAKE_PROFIT_USD
-                    sl_target_usd = config.STOP_LOSS_USD
-
-                # MINIMUM HOLD: Never exit before 5 minutes — prevents 7-second flips
+                # Strict fixed TP/SL targets in USD ($2.50 TP / $1.80 SL)
+                tp_target_usd = getattr(config, 'TAKE_PROFIT_USD', 2.50)
+                sl_target_usd = getattr(config, 'STOP_LOSS_USD', 1.80)
                 now_str = datetime.now(IST).strftime("%H:%M")
-                MIN_HOLD_MINUTES = getattr(config, 'MIN_HOLD_MINUTES', 5)
-                if elapsed_minutes < MIN_HOLD_MINUTES:
-                    self.add_log(f"[Hold] Holding position — {elapsed_minutes:.1f}m elapsed, minimum {MIN_HOLD_MINUTES}m required before any exit.")
-                # Exit criteria tests (only after minimum hold)
-                elif total_pnl_usd >= tp_target_usd:
+
+                # 1. IMMEDIATE EXITS (Take Profit & Stop Loss - ZERO delay)
+                if total_pnl_usd >= tp_target_usd:
                     self.execute_exit("take_profit", btc_price, tickers)
                 elif total_pnl_usd <= -sl_target_usd:
                     self.execute_exit("stop_loss", btc_price, tickers)
-                elif pos.breakeven_reached and total_pnl_usd <= 0.05 * major_entry_premium_usd:
-                    self.execute_exit("cost_to_cost", btc_price, tickers)
-                elif elapsed_minutes >= getattr(config, 'MAX_HOLD_DURATION_MINUTES', 30):
-                    self.execute_exit("max_holding_time", btc_price, tickers)
                 elif now_str >= config.FORCE_CLOSE_TIME:
                     self.execute_exit("force_close_eod", btc_price, tickers)
+                elif pos.breakeven_reached and total_pnl_usd <= 0.10:
+                    self.execute_exit("cost_to_cost", btc_price, tickers)
+                elif elapsed_minutes >= getattr(config, 'MAX_HOLD_DURATION_MINUTES', 25):
+                    self.execute_exit("max_holding_time", btc_price, tickers)
                 else:
                     # Check break-even trigger
-                    be_thresh_pct = getattr(config, 'BREAKEVEN_THRESHOLD_PCT', 0.50)
+                    be_thresh_pct = getattr(config, 'BREAKEVEN_THRESHOLD_PCT', 0.60)
                     if not pos.breakeven_reached and total_pnl_usd >= be_thresh_pct * tp_target_usd:
                         pos.breakeven_reached = True
                         self.save_state()
-                        self.add_log(f"[✔] BREAK-EVEN PROTECT: PnL reached {be_thresh_pct*100:.0f}% of TP target. Cost-to-cost exit activated.")
+                        self.add_log(f"[✔] BREAK-EVEN PROTECT: PnL reached {be_thresh_pct*100:.0f}% of TP target (${be_thresh_pct*tp_target_usd:.2f}). Cost-to-cost exit activated.")
 
             # 2. Check entry breakouts if no position is open
             else:
